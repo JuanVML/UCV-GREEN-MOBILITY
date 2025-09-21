@@ -1,24 +1,24 @@
-import React from "react";
+import React, { useContext } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import TabNavigator from "./TabNavigator";
-import ProfileScreen from "../screens/Profile";
-import MapScreen from "../screens/Map";
+import Login from "../screens/Login";
+import { AuthContext } from "../context/AuthContext";
+import TabNavigator from "./TabNavigator"; // Importa el TabNavigator
 
-// Definimos las rutas y sus params
-export type RootStackParamList = {
-  Main: undefined;
-  Profile: undefined;
-  Map: undefined;
-};
+const Stack = createNativeStackNavigator();
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const AppNavigator = () => {
+  const { user } = useContext(AuthContext);
 
-export default function AppNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Main" component={TabNavigator} />
-      <Stack.Screen name="Profile" component={ProfileScreen} />
-      <Stack.Screen name="Map" component={MapScreen} />
+      {user ? (
+        // Mostramos el TabNavigator con todas las pestañas
+        <Stack.Screen name="Main" component={TabNavigator} />
+      ) : (
+        <Stack.Screen name="Login" component={Login} />
+      )}
     </Stack.Navigator>
   );
-}
+};
+
+export default AppNavigator;

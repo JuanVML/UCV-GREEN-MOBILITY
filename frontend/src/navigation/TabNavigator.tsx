@@ -1,62 +1,43 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import DashboardScreen from "../screens/Dashboard";
-import ChatbotScreen from "../screens/Chatbot";
-import MoviShareScreen from "../screens/MoviShare";
-import MapScreen from "../screens/Map";
-import TeamScreen from "../screens/Team";
+import Dashboard from "../screens/Dashboard";
+import Map from "../screens/Map";
+import Team from "../screens/Team";
+import MoviShare from "../screens/MoviShare";
+import Chatbot from "../screens/Chatbot";
 import { Ionicons } from "@expo/vector-icons";
 
-export type TabParamList = {
-  Dashboard: undefined;
-  Mapa: undefined;
-  MoviShare: undefined;
-  Chatbot: undefined;
-  Equipo: undefined;
-};
+const Tab = createBottomTabNavigator();
 
-const Tab = createBottomTabNavigator<TabParamList>();
-
-export default function TabNavigator() {
+const TabNavigator = () => {
   return (
     <Tab.Navigator
-      id={undefined}
+      initialRouteName="Inicio"
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarStyle: { backgroundColor: "#fff" },
-        tabBarActiveTintColor: "#4CAF50",
-        tabBarInactiveTintColor: "gray",
         tabBarIcon: ({ color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = "home";
+          let iconName: string = "home";
 
-          switch (route.name) {
-            case "Dashboard":
-              iconName = "home";
-              break;
-            case "Mapa":
-              iconName = "map";
-              break;
-            case "MoviShare":
-              iconName = "bicycle";
-              break;
-            case "Chatbot":
-              iconName = "chatbubble-ellipses";
-              break;
-            case "Equipo":
-              iconName = "people";
-              break;
-          }
+          if (route.name === "Inicio") iconName = "home";
+          else if (route.name === "Mapa") iconName = "map";
+          else if (route.name === "Equipo") iconName = "people";
+          else if (route.name === "MoviShare") iconName = "bicycle";
+          else if (route.name === "Chatbot") iconName = "chatbubble-ellipses";
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName as any} size={size} color={color} />;
         },
+        tabBarActiveTintColor: "#007AFF",
+        tabBarInactiveTintColor: "gray",
       })}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Mapa" component={MapScreen} />
-      <Tab.Screen name="MoviShare" component={MoviShareScreen} />
-      <Tab.Screen name="Chatbot" component={ChatbotScreen} />
-      <Tab.Screen name="Equipo" component={TeamScreen} />
+      <Tab.Screen name="Inicio" component={Dashboard} />
+      <Tab.Screen name="Mapa" component={Map} />
+      <Tab.Screen name="Equipo" component={Team} />
+      <Tab.Screen name="MoviShare" component={MoviShare} />
+      <Tab.Screen name="Chatbot" component={Chatbot} />
     </Tab.Navigator>
   );
-}
+};
+
+export default TabNavigator;
 

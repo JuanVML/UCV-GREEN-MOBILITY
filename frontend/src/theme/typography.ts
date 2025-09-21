@@ -14,3 +14,4 @@ export const typography = StyleSheet.create({
     color: "#DDD",
   },
 });
+// aca siempre para los colores glabales de la app tambien
