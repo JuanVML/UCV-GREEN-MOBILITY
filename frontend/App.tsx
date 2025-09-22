@@ -1,30 +1,35 @@
-// App.tsx
-import React from "react";
-import { NavigationContainer } from "@react-navigation/native"; // Contenedor principal de navegación
-import AppNavigator from "./src/navigation/appNavigator"; // Navegador principal
-import { useFonts } from "expo-font"; // Hook para cargar fuentes
-import { ActivityIndicator, View } from "react-native"; // Loader de carga
+import React, { useEffect, useState } from 'react';
+import { LogBox } from 'react-native';
+import * as Font from 'expo-font';
+import { NavigationContainer } from '@react-navigation/native';
+import AppNavigator from './src/navigation/appNavigator';
+import { AuthProvider } from './src/context/AuthContext';
+import { ThemeProvider as AppThemeProvider } from './src/context/ThemeContext';
+
+LogBox.ignoreAllLogs(true);
 
 export default function App() {
-  // 🔹 Cargamos las tipografías personalizadas desde assets/fonts
-  const [fontsLoaded] = useFonts({
-    Mooli: require("./assets/fonts/Mooli-Regular.ttf"),
-    Outfit: require("./assets/fonts/Outfit-Medium.ttf"),
-  });
+  const [ready, setReady] = useState(false);
 
- 
-  if (!fontsLoaded) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
+  useEffect(() => {
+    (async () => {
+      await Font.loadAsync({
+        'Outfit-Medium': require('./assets/fonts/Outfit-Medium.ttf'),
+        'Mooli-Regular': require('./assets/fonts/Mooli-Regular.ttf'),
+      });
+      setReady(true);
+    })();
+  }, []);
 
-  // 🔹 Cuando las fuentes ya están listas, mostramos la navegación de la app
+  if (!ready) return null;
+
   return (
-    <NavigationContainer>
-      <AppNavigator />
-    </NavigationContainer>
+    <AppThemeProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <AppNavigator />
+        </NavigationContainer>
+      </AuthProvider>
+    </AppThemeProvider>
   );
 }

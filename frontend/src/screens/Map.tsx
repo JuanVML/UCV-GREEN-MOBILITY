@@ -1,15 +1,15 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
-export default function Map() {
+export default function MapScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Pantalla de Mapa</Text>
+      <Text style={styles.text}>Estás en la pantalla Map</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  text: { fontSize: 22, fontWeight: "bold" },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f2f7f6' },
+  text: { fontSize: 20, fontFamily: 'Mooli-Regular' },
 });
