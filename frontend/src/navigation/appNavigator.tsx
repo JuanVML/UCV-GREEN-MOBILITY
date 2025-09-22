@@ -1,8 +1,9 @@
 import React, { useContext } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Login from "../screens/Login";
+import Registro from "../screens/Registro";
 import { AuthContext } from "../context/AuthContext";
-import TabNavigator from "./TabNavigator"; // Importa el TabNavigator
+import TabNavigator from "./TabNavigator";
 
 const Stack = createNativeStackNavigator();
 
@@ -12,10 +13,12 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {user ? (
-        // Mostramos el TabNavigator con todas las pestañas
         <Stack.Screen name="Main" component={TabNavigator} />
       ) : (
-        <Stack.Screen name="Login" component={Login} />
+        <>
+          <Stack.Screen name="Login" component={Login} />
+          <Stack.Screen name="Registro" component={Registro} />
+        </>
       )}
     </Stack.Navigator>
   );

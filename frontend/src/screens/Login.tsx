@@ -9,18 +9,38 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { AuthContext } from "../context/AuthContext";
+import { useNavigation } from "@react-navigation/native";
+import { RootStackParamList } from "../navigation/types";
+import { Ionicons } from "@expo/vector-icons"; // Asegúrate de tener @expo/vector-icons instalado
+
+type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigation = useNavigation();
+  const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const navigation = useNavigation<LoginScreenNavigationProp>();
   const { login } = useContext(AuthContext);
+
+  const validateEmail = (correo: string) => {
+    setEmail(correo);
+    if (correo.length > 0 && !correo.endsWith("@ucvvirtual.edu.pe")) {
+      setEmailError("Solo se permiten correos @ucvvirtual.edu.pe");
+    } else {
+      setEmailError("");
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert("Error", "Por favor ingresa correo y contraseña");
+      return;
+    }
+    if (emailError) {
+      Alert.alert("Error", emailError);
       return;
     }
     const success = await login(email, password);
@@ -30,23 +50,27 @@ const Login = () => {
     // No navegues manualmente, la navegación ocurre automáticamente al cambiar el estado de usuario
   };
 
+  const goToRegister = () => {
+    navigation.navigate("Registro");
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Encabezado verde */}
-   <View style={styles.header}>
-  {/* Imagen mancha en la esquina superior izquierda */}
-  <Image
-    source={require("../../assets/images/mancha.png")}
-    style={styles.mancha}
-  />
+      <View style={styles.header}>
+        {/* Imagen mancha en la esquina superior izquierda */}
+        <Image
+          source={require("../../assets/images/mancha.png")}
+          style={styles.mancha}
+        />
 
-  <Text style={styles.title}>Hola!</Text>
-  <Text style={styles.subtitle}>Bienvenido a Movilidad verde!</Text>
-  <Image
-    source={require("../../assets/images/Planta.png")}
-    style={styles.plant}
-  />
-</View>
+        <Text style={styles.title}>Hola!</Text>
+        <Text style={styles.subtitle}>Bienvenido a Movilidad verde!</Text>
+        <Image
+          source={require("../../assets/images/Planta.png")}
+          style={styles.plant}
+        />
+      </View>
 
       {/* Card de login */}
       <View style={styles.card}>
@@ -57,16 +81,31 @@ const Login = () => {
           placeholder="Correo institucional"
           placeholderTextColor="#999"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={validateEmail}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          placeholderTextColor="#999"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        {emailError ? (
+          <Text style={{ color: "red", marginBottom: 8 }}>{emailError}</Text>
+        ) : null}
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={[styles.input, { flex: 1, marginBottom: 0 }]}
+            placeholder="Contraseña"
+            placeholderTextColor="#999"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setShowPassword((prev) => !prev)}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off" : "eye"}
+              size={22}
+              color="#888"
+            />
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Ingresar</Text>
@@ -82,12 +121,13 @@ const Login = () => {
         {/* Registro */}
         <Text style={styles.registerText}>
           ¿No tienes una cuenta?{" "}
-          <Text style={styles.registerLink}>Regístrate aquí</Text>
+          <Text style={styles.registerLink} onPress={goToRegister}>
+            Regístrate aquí
+          </Text>
         </Text>
 
         <Image
-        source={require("../../assets/images/Riding slider scooter.gif")}
-
+          source={require("../../assets/images/Riding slider scooter.gif")}
           style={styles.scooter}
         />
       </View>
@@ -121,7 +161,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     color: "#fff",
     marginTop: 5,
-      right: 35,
+    right: 35,
   },
   plant: {
     position: "absolute",
@@ -141,14 +181,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 5,
     zIndex: 10,
-    height: 670
+    height: 670,
   },
   cardTitle: {
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 20,
     color: "#1c6e65",
-    alignSelf: "flex-start"
+    alignSelf: "flex-start",
   },
   input: {
     width: "100%",
@@ -171,8 +211,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   footerText: {
-    marginTop: 20,
-    fontSize: 12,
+    marginTop: 40,
+    fontSize: 16,
     color: "#777",
     textAlign: "center",
   },
@@ -192,20 +232,37 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   scooter: {
-    width: 150,
-    height: 120,
+    width: 190,
+    height: 200,
     marginTop: 15,
     resizeMode: "contain",
   },
-
-
   mancha: {
-  position: "absolute",
-  top: -10,
-  left: -10,
-  width: 100,   // ajusta el tamaño según necesites
-  height: 100,
-  resizeMode: "contain",
-},
-
+    position: "absolute",
+    top: -10,
+    left: -10,
+    width: 100, // ajusta el tamaño según necesites
+    height: 100,
+    resizeMode: "contain",
+  },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 15,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 10,
+  },
+  eyeIcon: {
+    padding: 10,
+    position: "absolute",
+    right: 0,
+    zIndex: 10,
+  },
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginBottom: 10,
+    alignSelf: "flex-start",
+  },
 });

@@ -6,3 +6,9 @@ export type TabParamList = {
   Mapa: undefined;
   Equipo: undefined;
 };
+
+export type RootStackParamList = {
+  Login: undefined;
+  Registro: undefined;
+  Main: undefined; // TabNavigator
+};

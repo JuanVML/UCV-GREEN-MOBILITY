@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     // Aquí deberías conectar con tu backend o Firebase
-    if (email === 'a' && password === 'q') {
+    if (email === 'q@ucvvirtual.edu.pe' && password === 'q') {
       setUser(email);
       return true;
     }
