@@ -4,27 +4,27 @@
     "slug": "UCVGreenMobility",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./frontend/assets/icon.png",
+    "icon": "./frontend/assets/images/icon.jpg",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./frontend/assets/splash-icon.png",
+      "image": "./frontend/assets/images/icon.jpg",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0B6A75"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./frontend/assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./frontend/assets/images/icon.jpg",
+        "backgroundColor": "#0B6A75"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./frontend/assets/favicon.png"
+      "favicon": "./frontend/assets/images/icon.jpg"
     }
   }
 }

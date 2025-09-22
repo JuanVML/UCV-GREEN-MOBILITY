@@ -1,5 +1,13 @@
 {
   "plugins": [
     "expo-font"
-  ]
+  ],
+  "android": {
+    "package": "com.anonymous.ucvgreenmobility"
+  },
+  "extra": {
+    "eas": {
+      "projectId": "9df40ce7-bdf1-4dcd-a406-3fc42f0ec65c"
+    }
+  }
 }
