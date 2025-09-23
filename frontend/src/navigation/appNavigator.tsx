@@ -1,15 +1,24 @@
-import React, { useContext } from "react";
+import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
 import SplashScreen from "../screens/SplashScreen";
 import Login from "../screens/Login";
 import Registro from "../screens/Registro";
-import { AuthContext } from "../context/AuthContext";
 import TabNavigator from "./TabNavigator";
+import { useAuthContext } from "../context/AuthContext";
 
-const Stack = createNativeStackNavigator();
+// 🔹 Define los tipos de pantallas de tu stack
+export type RootStackParamList = {
+  Splash: undefined;
+  Login: undefined;
+  Registro: undefined;
+  Main: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigator = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuthContext();
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

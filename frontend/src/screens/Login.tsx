@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,12 +10,15 @@ import {
   Alert,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { AuthContext } from "../context/AuthContext";
+import { useAuthContext } from "../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
-import { RootStackParamList } from "../navigation/types";
-import { Ionicons } from "@expo/vector-icons"; // Asegúrate de tener @expo/vector-icons instalado
+import { RootStackParamList } from "../navigation/appNavigator";
+import { Ionicons } from "@expo/vector-icons";
 
-type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
+type LoginScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Login"
+>;
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -23,7 +26,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState("");
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const { login } = useContext(AuthContext);
+  const { login } = useAuthContext();
 
   const validateEmail = (correo: string) => {
     setEmail(correo);
@@ -47,7 +50,7 @@ const Login = () => {
     if (!success) {
       Alert.alert("Error", "Credenciales incorrectas");
     }
-    // No navegues manualmente, la navegación ocurre automáticamente al cambiar el estado de usuario
+    // Navegación automática por AuthContext
   };
 
   const goToRegister = () => {
@@ -58,12 +61,10 @@ const Login = () => {
     <ScrollView contentContainerStyle={styles.container}>
       {/* Encabezado verde */}
       <View style={styles.header}>
-        {/* Imagen mancha en la esquina superior izquierda */}
         <Image
           source={require("../../assets/images/mancha.png")}
           style={styles.mancha}
         />
-
         <Text style={styles.title}>Hola!</Text>
         <Text style={styles.subtitle}>Bienvenido a Movilidad verde!</Text>
         <Image
@@ -111,14 +112,12 @@ const Login = () => {
           <Text style={styles.buttonText}>Ingresar</Text>
         </TouchableOpacity>
 
-        {/* Línea y texto */}
         <Text style={styles.footerText}>Una aplicación exclusiva de :</Text>
         <Image
           source={require("../../assets/images/Escudo-ucv.png")}
           style={styles.logo}
         />
 
-        {/* Registro */}
         <Text style={styles.registerText}>
           ¿No tienes una cuenta?{" "}
           <Text style={styles.registerLink} onPress={goToRegister}>
@@ -241,7 +240,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -10,
     left: -10,
-    width: 100, // ajusta el tamaño según necesites
+    width: 100,
     height: 100,
     resizeMode: "contain",
   },

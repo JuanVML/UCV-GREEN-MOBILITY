@@ -1,120 +1,75 @@
-# README
-
-## Requisitos previos
-
-- [Node.js](https://nodejs.org/) (recomendado v18 o superior)
-- [npm](https://www.npmjs.com/) (v9 o superior) o [yarn](https://yarnpkg.com/)
-- [Expo CLI](https://docs.expo.dev/get-started/installation/) (global)
-
-Instala Expo CLI globalmente si no lo tienes:
-```sh
-npm install -g expo-cli
-```
-
-## Instalación del proyecto
-
-1. **Clona el repositorio y entra en la carpeta del proyecto:**
-   ```sh
-   git clone <URL_DEL_REPOSITORIO>
-   cd UCV-GREEN-MOBILITY
-   ```
-
-2. **Instala las dependencias del proyecto principal:**
-   ```sh
-   npm install
-   ```
-   o si prefieres usar yarn:
-   ```sh
-   yarn install
-   ```
-
-3. **(Opcional) Si vas a trabajar con el backend/functions en TypeScript, instala dependencias ahí también:**
-   ```sh
-   cd backend/functions
-   npm install
-   cd ../../
-   ```
-
-## Dependencias principales
-
-Estas se instalan automáticamente con `npm install`, pero si necesitas instalarlas manualmente:
-
-```sh
-npm install @expo/vector-icons @react-navigation/bottom-tabs @react-navigation/native @react-navigation/native-stack @react-navigation/stack expo expo-font expo-status-bar lottie-react-native react react-native react-native-gesture-handler react-native-reanimated react-native-safe-area-context react-native-screens
-```
-
-### Dependencias de desarrollo
-
-```sh
-npm install --save-dev @types/react typescript
-```
-
-## Fuentes personalizadas
-
-Las fuentes están en `frontend/assets/fonts/`. Expo las carga automáticamente si sigues el ejemplo de [`frontend/App.tsx`](frontend/App.tsx).
-
-## Scripts útiles
-
-- Iniciar el proyecto en modo desarrollo:
- 
-  npm start
-  ```
-- Ejecutar en Android:
-
-  npm run android
-  ```
-- Ejecutar en iOS:
-
-  npm run ios
-  ```
-- Ejecutar en web:
- 
-  npm run web
-  ```
-
-## Notas
-
-- El archivo [`frontend/app.json`](frontend/app.json) y [`frontend/assets`](frontend/assets) ya están configurados para Expo.
-- Si usas el backend/functions, asegúrate de tener configurado Firebase Functions y Node.js compatible.
+# UCV-GREEN-MOBILITY - Guía de Instalación y Uso
 
 ---
 
-## Resumen de comandos
+## 1. Requisitos previos
+
+- [Node.js](https://nodejs.org/) **v18 o superior**
+- [npm](https://www.npmjs.com/) **v9 o superior**
+- [Git](https://git-scm.com/)
+- **NO necesitas instalar Expo CLI globalmente** (usa siempre `npx expo ...`)
+
+---
+
+## 2. Instalación rápida (para clonar en cualquier PC)
 
 ```sh
-# Instalar Expo CLI globalmente (si no lo tienes)
-npm install -g expo-cli
+# 1. Clona el repositorio
+git clone 
+cd UCV-GREEN-MOBILITY
 
-# Instalar dependencias del proyecto
+# 2. Instala las dependencias principales
 npm install
-
-# (Opcional) Instalar dependencias en backend/functions
-cd backend/functions
-npm install
-cd ../../
-
-# Iniciar el proyecto
-npm start
 ```
 
 ---
 
-npm install expo-image-picker
+## 3. Dependencias necesarias
+
+1️⃣ Instala dependencias de Expo
+npx expo install expo expo-font expo-status-bar expo-image-picker expo-linear-gradient expo-location @expo/vector-icons lottie-react-native @react-navigation/native @react-navigation/bottom-tabs @react-navigation/native-stack @react-navigation/stack react-native-gesture-handler react-native-reanimated react-native-safe-area-context react-native-screens react-native-maps
+
+2️⃣ Instala dependencias con npm
+
+npm install @expo-google-fonts/poppins @mapbox/polyline polyline react-native-image-picker react-native-vector-icons
 
 
-¡Listo! Con esto tu proyecto debería funcionar correctamente.
+3️⃣ Dependencias de desarrollo (TypeScript + tipos)
+
+npm install --save-dev @types/react @types/react-native typescript
 
 
-------------------------------------------------------------------------------
-git add .
-git commit -m "Cambios en JUAN-MUÑOZ-LOPEZ antes de merge"
-git push origin JUAN-MUÑOZ-LOPEZ
+
+## 4. Cómo emular la app en modo desarrollo
+
+# Limpia el caché y arranca el servidor de desarrollo (Metro Bundler)
+npx expo start -c
+
+- Escanea el QR con **Expo Go** solo si NO usas módulos nativos extra.
+- Si usas mapas u otros módulos nativos, sigue el siguiente apartado.
+
+---
+
+## 5. Cómo generar e instalar el APK en tu celular (sin usar Expo Go)
 
 
-git pull origin main        # Asegúrate de que main esté actualizado
-git merge JUAN-MUÑOZ-LOPEZ  # Trae todos los cambios de tu rama
+# 1. Genera un build nativo de desarrollo e instala en tu dispositivo Android conectado por USB:
+npx expo run:android
 
+# 2. Si quieres generar un APK para instalar manualmente:
+npx expo build:android -t apk
+# O con el nuevo CLI:
+npx expo export --platform android
+# El APK estará en la carpeta 'dist' o te dará un enlace de descarga.
+```
+> **Nota:** Para builds de producción, debes tener una cuenta en Expo y seguir las instrucciones que te da el comando.
 
-git push origin main
+---
 
-ad
+## 6. Notas importantes
+
+- **No uses Expo Go** si tu app usa mapas u otros módulos nativos extra.
+- Si tienes errores de dependencias, ejecuta `npm install` y luego `npx expo install` para asegurarte de que todo esté alineado.
+- Si cambias de PC o clonas el proyecto, solo necesitas `npm install` y luego seguir los pasos de arriba.
+
+---
