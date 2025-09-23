@@ -56,19 +56,19 @@ Las fuentes están en `frontend/assets/fonts/`. Expo las carga automáticamente 
 ## Scripts útiles
 
 - Iniciar el proyecto en modo desarrollo:
-  ```sh
+ 
   npm start
   ```
 - Ejecutar en Android:
-  ```sh
+
   npm run android
   ```
 - Ejecutar en iOS:
-  ```sh
+
   npm run ios
   ```
 - Ejecutar en web:
-  ```sh
+ 
   npm run web
   ```
 
