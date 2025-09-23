@@ -99,4 +99,7 @@ npm start
 
 ---
 
+npm install expo-image-picker
+
+
 ¡Listo! Con esto tu proyecto debería funcionar correctamente.
