@@ -1,5 +1,3 @@
-// src/theme/typography.ts
-import { StyleSheet } from "react-native";
 
 export const typography = StyleSheet.create({
   title: {

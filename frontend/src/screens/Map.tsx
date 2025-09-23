@@ -120,6 +120,7 @@ export default function Map() {
 }
 
 const styles = StyleSheet.create({
+<<<<<<< HEAD
   container: { flex: 1 },
   map: { flex: 1 },
 
@@ -202,4 +203,8 @@ const styles = StyleSheet.create({
     maxHeight: 80,
   },
   savedItem: { fontSize: 12, paddingVertical: 2 },
+=======
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f2f7f6' },
+  text: { fontSize: 20, fontFamily: 'Mooli-Regular' },
+>>>>>>> origin/BRIAN-YAMIL-TOLENTINO
 });

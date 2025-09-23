@@ -1,24 +1,26 @@
-import React, { createContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+
+type User = {
+  name: string;
+  email: string;
+  photoUrl?: string;
+};
 
 type AuthContextType = {
-  user: string | null;
+  user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 };
 
-export const AuthContext = createContext<AuthContextType>({
-  user: null,
-  login: async () => false,
-  logout: () => {},
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const login = async (email: string, password: string) => {
     // Aquí deberías conectar con tu backend o Firebase
     if (email === 'q@ucvvirtual.edu.pe' && password === 'q') {
-      setUser(email);
+      setUser({ name: 'Usuario Demo', email });
       return true;
     }
     return false;
@@ -31,4 +33,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuthContext = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuthContext must be used within AuthProvider');
+  return ctx;
 };
