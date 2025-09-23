@@ -103,3 +103,17 @@ npm install expo-image-picker
 
 
 ¡Listo! Con esto tu proyecto debería funcionar correctamente.
+
+
+------------------------------------------------------------------------------
+git add .
+git commit -m "Cambios en JUAN-MUÑOZ-LOPEZ antes de merge"
+git push origin JUAN-MUÑOZ-LOPEZ
+
+
+git pull origin main        # Asegúrate de que main esté actualizado
+git merge JUAN-MUÑOZ-LOPEZ  # Trae todos los cambios de tu rama
+
+
+git push origin main
+
