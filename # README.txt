@@ -73,3 +73,32 @@ npx expo export --platform android
 - Si cambias de PC o clonas el proyecto, solo necesitas `npm install` y luego seguir los pasos de arriba.
 
 ---
+
+
+🔹 1. Asegúrate de estar en tu rama actual
+
+git checkout JUANMUÑOZLOPEZ
+
+🔹 2. Guarda tus cambios en la rama
+
+git add .
+git commit -m "Mis últimos cambios desde rama JUANMUÑOZLOPEZ"
+
+🔹 3. Cambia a la rama main
+
+git checkout main
+
+
+🔹 4. Actualiza main con lo último del remoto
+
+git pull origin main
+
+
+
+🔹 5. Fusiona tu rama con main
+
+git merge JUANMUÑOZLOPEZ
+
+
+🔹 6. Sube la rama main actualizada al remoto
+git push origin main
