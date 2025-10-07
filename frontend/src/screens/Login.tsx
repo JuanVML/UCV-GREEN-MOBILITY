@@ -49,8 +49,9 @@ const Login = () => {
     const success = await login(email, password);
     if (!success) {
       Alert.alert("Error", "Credenciales incorrectas");
+    } else {
+      navigation.navigate("Main"); // 👈 Esto te lleva a las pestañas (Dashboard, etc.)
     }
-    // Navegación automática por AuthContext
   };
 
   const goToRegister = () => {
