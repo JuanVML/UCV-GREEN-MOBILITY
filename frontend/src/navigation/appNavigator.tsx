@@ -18,12 +18,13 @@ function MainTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarStyle: { height: 70, paddingBottom: 8 },
+        tabBarStyle: { height: 35, paddingBottom: 4 },
         tabBarIcon: ({ focused, color, size }) => {
           let name: any = 'home';
           if (route.name === 'Mapa') name = 'map';
           if (route.name === 'MoviShare') name = 'bicycle';
           if (route.name === 'Chatbot') name = 'chatbubble';
+          if (route.name === 'Team') name = 'people';
           return <Ionicons name={name} size={24} color={focused ? '#0F6E66' : '#9AAEB0'} />;
         },
       })}
@@ -32,6 +33,7 @@ function MainTabs() {
       <Tab.Screen name="Mapa" component={MapScreen} />
       <Tab.Screen name="MoviShare" component={MoviShareScreen} />
       <Tab.Screen name="Chatbot" component={ChatbotScreen} />
+      <Tab.Screen name="Team" component={TeamScreen} />
     </Tab.Navigator>
   );
 }
@@ -41,7 +43,6 @@ export default function AppNavigator() {
     <Stack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Main" component={MainTabs} />
       {/* Screens accesibles desde botones del dashboard */}
-      <Stack.Screen name="Team" component={TeamScreen} />
     </Stack.Navigator>
   );
 }

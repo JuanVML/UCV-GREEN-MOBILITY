@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     paddingHorizontal: 22,
-    paddingTop: 10,
+    paddingTop: 0,
   },
   topRow: {
     flexDirection: "row",
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     borderRadius: 23,
   },
   greetingRow: {
-    marginTop: 8,
+    marginTop: -5,
   },
   greeting: {
     fontFamily: fonts.title,
