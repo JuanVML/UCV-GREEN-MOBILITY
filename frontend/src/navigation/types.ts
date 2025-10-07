@@ -1,14 +1,12 @@
-// src/navigation/types.ts
 export type TabParamList = {
-  Dashboard: undefined;
-  Chatbot: undefined;
-  MoviShare: undefined;
+  Inicio: undefined;
   Mapa: undefined;
-  Equipo: undefined;
+  MoviShare: undefined;
+  Chatbot: undefined;
+  Team: undefined;
 };
 
-export type RootStackParamList = {
-  Login: undefined;
-  Registro: undefined;
-  Main: undefined; // TabNavigator
+export type StackParamList = {
+  Main: undefined;
+  Team: undefined;
 };

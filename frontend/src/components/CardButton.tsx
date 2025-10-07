@@ -16,18 +16,17 @@ export default function CardButton({ title, image, onPress }: { title: string; i
 const styles = StyleSheet.create({
   wrapper: {
     width: 150,
-    height: 150,
-    backgroundColor: '#FFFFFF',
+    height: 130,
+    backgroundColor: '#dce3e0ff',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     margin: 4,
-    marginHorizontal: 14,
     shadowColor: '#010000ff',
     shadowOpacity: 0.04,
     elevation: 3,
   },
   iconWrap: { width: 72, height: 72, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
   icon: { width: 56, height: 56, resizeMode: 'contain' },
-  title: { fontFamily: fonts.text, fontSize: 14, color: '#2E6D68' },
+  title: { fontFamily: fonts.text, fontSize: 14, color: '#195c56ff' },
 });
