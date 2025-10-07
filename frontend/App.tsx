@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation/appNavigator';
 import { AuthProvider } from './src/context/AuthContext';
 import { ThemeProvider as AppThemeProvider } from './src/context/ThemeContext';
+import { ChatProvider } from './src/context/ChatContext';
 
 LogBox.ignoreAllLogs(true);
 
@@ -26,9 +27,11 @@ export default function App() {
   return (
     <AppThemeProvider>
       <AuthProvider>
-        <NavigationContainer>
-          <AppNavigator />
-        </NavigationContainer>
+        <ChatProvider>
+          <NavigationContainer>
+            <AppNavigator />
+          </NavigationContainer>
+        </ChatProvider>
       </AuthProvider>
     </AppThemeProvider>
   );
