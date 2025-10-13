@@ -59,9 +59,14 @@ Cambia a la rama principal : git checkout main
 
 Actualiza la rama main con lo último del repositorio remoto : git pull origin main
 
-Fusiona tu rama con main : git merge JUANMUÑOZLOPEZ
+Trae los cambios de la rama (Nombre de la Rama de donde quieres traer el cambio):
+git merge origin/(NOMBRE DE LA RAMA) 
 
-Sube la rama main actualizada al remoto : git push origin main
+Si prefieres reemplazar tu rama con lo que tiene la RAMA DE DONDE QUIERES TRAER LOS CAMBIOS
+git reset --hard origin/(NOMBRE DE LA RAMA) 
+
+
+Sube la rama main actualizada al remoto : git push origin (NOMBRE DE LA RAMA) 
 
 ------------------------------------------------------------------------------------------
 PARA CUANDO QUIERAS GUARDAR LOS CAMBIOS EN TU RAMA RESPECTIVA :
