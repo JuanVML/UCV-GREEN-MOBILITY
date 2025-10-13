@@ -40,6 +40,15 @@ npx expo start -c (CON ESTE CODIGO SE TIENE QUE EJECUTAR EL PROYECTO)
 ---->>Opciones:
 
                 Escanea el código QR con Expo Go
+4 intalacion para el efecto de desenfoque
+    npx expo install expo-blur
+    Instalar expo-speech
+    npx expo install expo-speech
+    npx expo install expo-location
+    npx expo install react-native-reanimated
+    npx expo install react-native-gesture-handler
+    npx expo install expo-linear-gradient
+    npx expo install expo-permissions
 
 
 5. PARA CUANDO QUERAMOS YA TENER LA APP EN SI Y NO EMULARLO EN EXPO :
