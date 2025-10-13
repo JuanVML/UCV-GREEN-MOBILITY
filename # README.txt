@@ -38,6 +38,15 @@ npm install @expo-google-fonts/poppins @mapbox/polyline polyline react-native-im
 
 npm install --save-dev @types/react @types/react-native typescript
 
+4 intalacion para el efecto de desenfoque
+    npx expo install expo-blur
+    Instalar expo-speech
+    npx expo install expo-speech
+    npx expo install expo-location
+    npx expo install react-native-reanimated
+    npx expo install react-native-gesture-handler
+    npx expo install expo-linear-gradient
+    npx expo install expo-permissions
 
 
 ## 4. Cómo emular la app en modo desarrollo
