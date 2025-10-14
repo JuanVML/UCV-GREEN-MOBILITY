@@ -18,7 +18,7 @@ function MainTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarStyle: { height: 35, paddingBottom: 4 },
+        tabBarStyle: { height: 65, paddingBottom: 8, paddingTop: 8 },
         tabBarIcon: ({ focused, color, size }) => {
           let name: any = 'home';
           if (route.name === 'Mapa') name = 'map';

@@ -3,73 +3,209 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  ImageBackground, 
   TouchableOpacity, 
-  StatusBar 
+  StatusBar,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '../hooks/useNavigation';
+import { useMovilShare } from '../hooks/useMovilShare';
+import { lightTheme } from '../theme/colors';
+import { fonts } from '../theme/fonts';
+import MovilShareHeader from '../components/MovilShareHeader';
+import UserShareCard from '../components/UserShareCard';
 
 export default function MoviShareScreen() {
   const navigation = useNavigation();
+  const { users, isLoading, error, joinUser, createMeetingPoint } = useMovilShare();
 
-  // Función para navegar hacia atrás
   const handleGoBack = () => {
     navigation.goBack();
   };
 
+  const handleUserPress = async (userId: string) => {
+    // TODO: Implementar navegación al perfil del usuario o mostrar opciones
+    Alert.alert(
+      'Unirse al viaje',
+      '¿Quieres unirte a este usuario para compartir el viaje?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Unirse', 
+          onPress: () => joinUser(userId)
+        }
+      ]
+    );
+  };
+
+  const handleCreatePoint = () => {
+    // TODO: Implementar modal o navegación para crear punto de encuentro
+    Alert.alert(
+      'Crear punto',
+      'Esta funcionalidad se implementará cuando esté listo el backend',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleAvatarPress = () => {
+    // TODO: Implementar navegación al perfil del usuario
+    console.log('Avatar presionado');
+  };
+
+  // Mostrar estado de carga
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor={lightTheme.primary} />
+        <MovilShareHeader 
+          title="MovilShare"
+          onGoBack={handleGoBack}
+          onAvatarPress={handleAvatarPress}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={styles.loadingText}>Cargando usuarios...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Mostrar error si existe
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor={lightTheme.primary} />
+        <MovilShareHeader 
+          title="MovilShare"
+          onGoBack={handleGoBack}
+          onAvatarPress={handleAvatarPress}
+        />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <ImageBackground 
-      source={require('../../assets/images/fondo3.png')} 
-      style={styles.background}
-      resizeMode="cover"
-    >
-      {/* Configuración de la barra de estado */}
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={lightTheme.primary} />
       
-      {/* Flecha de regreso en la parte superior */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-           
-          onPress={handleGoBack}
-          activeOpacity={0.7}
+      {/* Header */}
+      <MovilShareHeader 
+        title="MovilShare"
+        onGoBack={handleGoBack}
+        onAvatarPress={handleAvatarPress}
+      />
+
+      {/* Content */}
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          {users.length > 0 ? (
+            users.map((user) => (
+              <UserShareCard
+                key={user.id}
+                id={user.id}
+                name={user.name}
+                location={user.location}
+                time={user.time}
+                avatar={user.avatar}
+                onPress={handleUserPress}
+              />
+            ))
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                No hay usuarios disponibles para compartir viaje en este momento
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Create Point Button */}
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={handleCreatePoint}
+          activeOpacity={0.8}
         >
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          <Text style={styles.createButtonText}>Crear punto</Text>
         </TouchableOpacity>
       </View>
-
-      <View style={styles.container}>
-        <Text style={styles.text}>Te encuentras en la pantalla MovilShare</Text>
-      </View>
-    </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
+  container: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    backgroundColor: lightTheme.primary,
   },
-  header: {
-    position: 'absolute',
-    top: StatusBar.currentHeight || 44,
-    left: 0,
-    right: 0,
-    zIndex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 10,
+  scrollContainer: {
+    flex: 1,
   },
-
-  container: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+  content: {
+    padding: 16,
+    paddingBottom: 100, // Espacio para el botón flotante
   },
-  text: { 
-    fontSize: 20, 
-    fontFamily: 'Mooli-Regular',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: fonts.text,
+    color: '#FFFFFF',
+    marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: fonts.text,
     color: '#FFFFFF',
     textAlign: 'center',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontFamily: fonts.text,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: lightTheme.primary,
+    padding: 16,
+    paddingBottom: 32,
+  },
+  createButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  createButtonText: {
+    fontSize: 16,
+    fontFamily: fonts.title,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });
