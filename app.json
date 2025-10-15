@@ -1,13 +1,34 @@
 {
-  "plugins": [
-    "expo-font"
-  ],
-  "android": {
-    "package": "com.anonymous.ucvgreenmobility"
-  },
-  "extra": {
-    "eas": {
-      "projectId": "9df40ce7-bdf1-4dcd-a406-3fc42f0ec65c"
+  "expo": {
+    "name": "UCV Green Mobility",
+    "slug": "ucv-green-mobility",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./frontend/assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./frontend/assets/favicon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "plugins": [
+      "expo-font"
+    ],
+    "android": {
+      "package": "com.ucv.greenmobility",
+      "adaptiveIcon": {
+        "foregroundImage": "./frontend/assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9df40ce7-bdf1-4dcd-a406-3fc42f0ec65c"
+      }
     }
   }
 }

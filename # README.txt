@@ -123,8 +123,33 @@ npm install -g expo-cli
  
 Que son los pasos iniciales .....
 
+---------------------------------------------------------------------------------------------------------
+                BASE DE DATOS :
+
+INSTALAR : npm install firebase
+
+ archivo de configuración de Firebase
+
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAlZMOgyE9vAaoVhuKo71HdaTSjrXjQYMk",
+  authDomain: "ucv-green-mobility-f98b1.firebaseapp.com",
+  projectId: "ucv-green-mobility-f98b1",
+  storageBucket: "ucv-green-mobility-f98b1.appspot.com",
+  messagingSenderId: "978357271003",
+  appId: "1:978357271003:web:a46d5c32f62a3b01cc4ffe"
+};
+
+const app = initializeApp(firebaseConfig);
+
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 
 
+---------------------------------------------------------------------------------------------------
 👨‍💻 Autor : Juan Vicente Muñoz López
 
 Proyecto: UCV-GREEN-MOBILITY

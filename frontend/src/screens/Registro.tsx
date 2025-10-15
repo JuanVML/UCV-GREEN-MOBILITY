@@ -8,9 +8,11 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Button,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons"; // Asegúrate de tener @expo/vector-icons instalado
+import { registerUser } from "../../../backend/functions/src/auth/authController";
 
 const Registro = () => {
   const [foto, setFoto] = useState<string | null>(null);
@@ -23,6 +25,9 @@ const Registro = () => {
   const [passwordError, setPasswordError] = useState("");
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [dni, setDni] = useState("");
+  const [carrera, setCarrera] = useState("");
 
   // Función para abrir la galería
   const subirImagen = async () => {
@@ -33,7 +38,7 @@ const Registro = () => {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, // Usa MediaTypeOptions para Expo
       quality: 1,
     });
 
@@ -69,6 +74,27 @@ const Registro = () => {
     }
   };
 
+  const handleRegister = async () => {
+    if (password !== repeatPassword) {
+      setPasswordError("Las contraseñas no coinciden");
+      return;
+    }
+    const result = await registerUser({
+      name: nombre,
+      dni,
+      email,
+      carrera,
+      ciclo,
+      password: repeatPassword, // Solo este valor se guarda en Firestore
+    });
+    if (result.success) {
+      Alert.alert("Registro exitoso");
+      // Navega a login o dashboard
+    } else {
+      Alert.alert("Error", result.error || "No se pudo registrar");
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Header */}
@@ -84,11 +110,18 @@ const Registro = () => {
       <View style={styles.form}>
         <Text style={styles.formTitle}>Regístrate</Text>
 
-        <TextInput style={styles.input} placeholder="nombre completo" />
+        <TextInput
+          style={styles.input}
+          placeholder="nombre completo"
+          value={nombre}
+          onChangeText={setNombre}
+        />
         <TextInput
           style={styles.input}
           placeholder="DNI"
           keyboardType="numeric"
+          value={dni}
+          onChangeText={setDni}
         />
         <TextInput
           style={styles.input}
@@ -108,6 +141,8 @@ const Registro = () => {
             <TextInput
               style={[styles.input, styles.inputHalfFix]}
               placeholder="carrera"
+              value={carrera}
+              onChangeText={setCarrera}
             />
 
             {/* Botón Ciclo */}
@@ -213,13 +248,7 @@ const Registro = () => {
         {/* Botón enviar */}
         <TouchableOpacity
           style={styles.button}
-          onPress={() => {
-            if (password !== repeatPassword) {
-              setPasswordError("Las contraseñas no coinciden");
-              return;
-            }
-            // Aquí tu lógica de registro
-          }}
+          onPress={handleRegister}
         >
           <Text style={styles.buttonText}>ENVIAR</Text>
         </TouchableOpacity>

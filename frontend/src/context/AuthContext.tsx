@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
+import { loginWithEmail, registerUser } from "../../../backend/functions/src/auth/authController";
+import { auth, db } from "../api/firebase";
 
 type User = {
   name: string;
@@ -18,9 +20,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 
   const login = async (email: string, password: string) => {
-    // 🔹 Simulación (luego puedes conectar con tu backend)
-    if (email === "q@ucvvirtual.edu.pe" && password === "q") {
-      setUser({ name: "Usuario Demo", email });
+    const result = await loginWithEmail(email, password);
+    if (result.success && result.user && result.user.email) {
+      setUser({
+        name: result.user.displayName ?? "Usuario",
+        email: result.user.email ?? "",
+      });
       return true;
     }
     return false;
@@ -35,7 +40,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// ✅ Hook para acceder fácil al contexto
 export const useAuthContext = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuthContext must be used within AuthProvider");
