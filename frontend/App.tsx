@@ -44,9 +44,7 @@ export default function App() {
         </ChatProvider>
       </AuthProvider>
       <View>
-        <Text>
-          {firebaseReady ? "✅ Firebase configurado correctamente" : "❌ Error en configuración de Firebase"}
-        </Text>
+   
       </View>
     </AppThemeProvider>
   );
