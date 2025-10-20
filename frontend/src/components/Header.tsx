@@ -123,7 +123,7 @@ export default function Header({ onAvatarPress }: Props) {
 const styles = StyleSheet.create({
   headerContainer: {
     width: "100%",
-    backgroundColor: "#1B5E20",
+    backgroundColor: "#118245ff",
     paddingTop: Platform.OS === "ios" ? 50 : 25,
     paddingBottom: 20,
     paddingHorizontal: 24,
