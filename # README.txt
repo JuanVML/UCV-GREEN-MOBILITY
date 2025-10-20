@@ -149,6 +149,45 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 
+--------------------------------------------------------------------------------------------------
+NOTAS PARA SUBIR CAMBIOS A LA COPIA DE SEGURIDAD
+
+Si lo que deseas es que las ramas main y Backup queden idénticas a tu rama actual JUANMUÑOZLOPEZ, puedes hacerlo con estos comandos seguros y directos:
+
+🚀 PASOS CLAROS
+
+1️⃣ Guarda todos tus cambios locales (si no lo hiciste ya):
+
+git add .
+git commit -m "Últimos cambios en JUANMUÑOZLOPEZ"
+
+
+2️⃣ Actualiza referencias remotas (por seguridad):
+
+git fetch origin
+
+
+3️⃣ Empuja tu rama actual a las ramas remotas main y Backup, sobrescribiéndolas con tu versión:
+
+git push --force-with-lease origin HEAD:main
+git push --force-with-lease origin HEAD:Backup
+
+🧠 Qué hace esto
+
+HEAD = tu rama actual (JUANMUÑOZLOPEZ).
+
+--force-with-lease = sobrescribe solo si el remoto no ha cambiado desde la última vez que lo descargaste (es más seguro que --force).
+
+Al terminar, las ramas main y Backup quedarán idénticas a tu rama JUANMUÑOZLOPEZ tanto en historial como en archivos.
+
+✅ Verifica que todo salió bien
+git fetch origin
+git log --oneline origin/main -n 5
+git log --oneline origin/Backup -n 5
+
+
+Deberían mostrar los mismos commits que tu rama actual.
+
 ---------------------------------------------------------------------------------------------------
 👨‍💻 Autor : Juan Vicente Muñoz López
 
