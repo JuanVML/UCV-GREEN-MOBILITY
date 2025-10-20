@@ -94,7 +94,7 @@ const Registro = () => {
           localImagePath = profilesDir + filename;
           await FileSystem.copyAsync({ from: foto, to: localImagePath });
         } catch (err) {
-          console.warn("No se pudo guardar la imagen localmente:", err);
+          console.warn("No se pudo guardar la imagen:", err);
           localImagePath = null;
         }
       }

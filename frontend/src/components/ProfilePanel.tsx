@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fonts } from "../theme/fonts";
@@ -16,7 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { auth, db } from "../api/firebase";
-import { useUser } from "../context/UserContext"; // ✅ Importa el contexto
+import { useUser } from "../context/UserContext";
 
 type Props = { visible: boolean; onClose: () => void };
 
@@ -27,7 +27,7 @@ type ProfileData = {
   dni?: string;
   ciclo?: string;
   password?: string;
-  imagenLocal?: string; // ruta local
+  imagenLocal?: string;
   uid?: string;
 };
 
@@ -38,10 +38,30 @@ export default function ProfilePanel({ visible, onClose }: Props) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
 
-  const { updateAvatar } = useUser(); // ✅ usar contexto para sincronizar avatar global
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const { updateAvatar } = useUser();
 
-  // 🔹 Cargar perfil desde Firestore y local
+  // 🔹 Mostrar notificación animada
+  const showSuccessToast = (message: string) => {
+    setSuccessVisible(true);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+
+    setTimeout(() => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => setSuccessVisible(false));
+    }, 2500);
+  };
+
+  // 🔹 Cargar perfil
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -59,23 +79,21 @@ export default function ProfilePanel({ visible, onClose }: Props) {
           const data = snap.docs[0].data() as ProfileData;
           setProfile(data);
 
-          // Si hay imagen local y existe
           if (data.imagenLocal) {
             const info = await FileSystem.getInfoAsync(data.imagenLocal);
             if (info.exists) {
               setAvatarUrl(data.imagenLocal);
-              updateAvatar(data.imagenLocal); // ✅ actualizar contexto global
+              updateAvatar(data.imagenLocal);
               setLoading(false);
               return;
             }
           }
 
-          // Si no hay imagen local, usar imagen remota o default
           setAvatarUrl(
             data.imagenLocal ??
               "https://firebasestorage.googleapis.com/v0/b/ucv-green-mobility-f98b1.appspot.com/o/default-user.png?alt=media"
           );
-          updateAvatar(data.imagenLocal ?? ""); // actualiza el contexto
+          updateAvatar(data.imagenLocal ?? "");
         }
       } catch (err) {
         console.warn("Error al cargar perfil:", err);
@@ -87,12 +105,12 @@ export default function ProfilePanel({ visible, onClose }: Props) {
     return () => unsub();
   }, [visible]);
 
-  // 📸 Cambiar imagen (local y sincroniza contexto)
+  // 📸 Cambiar imagen (local + contexto)
   const handleChangeImage = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Permiso denegado", "Se requiere acceso a la galería para cambiar la foto.");
+        showSuccessToast("Permiso denegado para acceder a galería.");
         return;
       }
 
@@ -113,11 +131,10 @@ export default function ProfilePanel({ visible, onClose }: Props) {
 
       const user = auth.currentUser;
       if (!user) {
-        Alert.alert("Error", "No hay usuario autenticado.");
+        showSuccessToast("Error: usuario no autenticado.");
         return;
       }
 
-      // Guardar la referencia local en Firestore (opcional)
       const q = query(collection(db, "Registro"), where("uid", "==", user.uid));
       const snap = await getDocs(q);
       if (!snap.empty) {
@@ -127,12 +144,12 @@ export default function ProfilePanel({ visible, onClose }: Props) {
 
       setAvatarUrl(localPath);
       setProfile((prev) => (prev ? { ...prev, imagenLocal: localPath } : prev));
-      updateAvatar(localPath); // ✅ sincroniza con el Header
+      updateAvatar(localPath);
 
-      Alert.alert("Éxito", "Imagen actualizada correctamente.");
+      showSuccessToast("🌿 Imagen actualizada correctamente");
     } catch (err: any) {
       console.error("Error cambiando imagen:", err);
-      Alert.alert("Error", err.message || "No se pudo cambiar la imagen.");
+      showSuccessToast("❌ No se pudo cambiar la imagen.");
     }
   };
 
@@ -203,6 +220,14 @@ export default function ProfilePanel({ visible, onClose }: Props) {
             </TouchableOpacity>
           </View>
         </ScrollView>
+
+        {/* ✅ Toast de éxito personalizado */}
+        {successVisible && (
+          <Animated.View style={[styles.toast, { opacity: fadeAnim }]}>
+            <Ionicons name="leaf" size={22} color="#fff" style={{ marginRight: 6 }} />
+            <Text style={styles.toastText}>Imagen actualizada correctamente 🌿</Text>
+          </Animated.View>
+        )}
       </View>
     </View>
   );
@@ -258,4 +283,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   inputText: { fontFamily: fonts.text, color: "#2E6D68" },
+  toast: {
+    position: "absolute",
+    bottom: 20,
+    alignSelf: "center",
+    backgroundColor: "#1B7F6C",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 30,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  toastText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontFamily: fonts.text,
+  },
 });
