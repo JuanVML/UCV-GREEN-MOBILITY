@@ -1,14 +1,24 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fonts } from "../theme/fonts";
+import * as FileSystem from "expo-file-system";
+import * as ImagePicker from "expo-image-picker";
 
 // Firebase
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { getDownloadURL, ref } from "firebase/storage"; // 👈 necesario
+import { collection, query, where, getDocs, updateDoc } from "firebase/firestore";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db } from "../api/firebase";
-import { getStorage } from "firebase/storage";
 
 type Props = { visible: boolean; onClose: () => void };
 
@@ -19,7 +29,8 @@ type ProfileData = {
   dni?: string;
   ciclo?: string;
   password?: string;
-  imagen?: string; // puede ser URL o nombre de archivo
+  imagen?: string; // URL en Firebase Storage
+  imagenLocal?: string; // Ruta local guardada 📁
   uid?: string;
 };
 
@@ -29,7 +40,9 @@ export default function ProfilePanel({ visible, onClose }: Props) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
+  // 🔹 Cargar perfil
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -47,21 +60,19 @@ export default function ProfilePanel({ visible, onClose }: Props) {
           const data = snap.docs[0].data() as ProfileData;
           setProfile(data);
 
-          // 📸 Intenta traer la imagen real desde Firebase Storage
-          if (data.imagen) {
-            const storage = getStorage();
-            let imageUrl: string;
-
-            if (data.imagen.startsWith("http")) {
-              // ya es una URL completa
-              imageUrl = data.imagen;
-            } else {
-              // es solo un nombre de archivo, obtenemos la URL pública
-              const imageRef = ref(storage, `perfiles/${data.imagen}`);
-              imageUrl = await getDownloadURL(imageRef);
+          // Si existe imagen local, úsala
+          if (data.imagenLocal) {
+            const info = await FileSystem.getInfoAsync(data.imagenLocal);
+            if (info.exists) {
+              setAvatarUrl(data.imagenLocal);
+              setLoading(false);
+              return;
             }
+          }
 
-            setAvatarUrl(imageUrl);
+          // Si no hay local, carga desde Firebase
+          if (data.imagen) {
+            setAvatarUrl(data.imagen);
           } else {
             setAvatarUrl(null);
           }
@@ -70,9 +81,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
           setAvatarUrl(null);
         }
       } catch (err) {
-        console.warn("ProfilePanel: error fetching profile", err);
-        setProfile(null);
-        setAvatarUrl(null);
+        console.warn("Error al cargar perfil:", err);
       } finally {
         setLoading(false);
       }
@@ -80,6 +89,67 @@ export default function ProfilePanel({ visible, onClose }: Props) {
 
     return () => unsub();
   }, [visible]);
+
+  // 📸 Cambiar imagen: elige, guarda localmente y sube a Firebase
+  const handleChangeImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permiso denegado", "Se requiere acceso a la galería para cambiar la foto.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets?.length) return;
+
+      const uri = result.assets[0].uri;
+      const profilesDir = FileSystem.documentDirectory + "profiles/";
+      await FileSystem.makeDirectoryAsync(profilesDir, { intermediates: true });
+
+      const localPath = profilesDir + `${Date.now()}.jpg`;
+      await FileSystem.copyAsync({ from: uri, to: localPath });
+
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert("Error", "No hay usuario autenticado.");
+        return;
+      }
+
+      const q = query(collection(db, "Registro"), where("uid", "==", user.uid));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        Alert.alert("Error", "No se encontró el documento del usuario.");
+        return;
+      }
+      const docRef = snap.docs[0].ref;
+
+      const storage = getStorage();
+      const sRef = storageRef(storage, `profiles/${user.uid}.jpg`);
+
+      const blob = await (await fetch(uri)).blob();
+      await uploadBytes(sRef, blob);
+      const imageUrl = await getDownloadURL(sRef);
+
+      await updateDoc(docRef, {
+        imagen: imageUrl,
+        imagenLocal: localPath,
+      });
+
+      setAvatarUrl(localPath);
+      setProfile((prev) =>
+        prev ? { ...prev, imagen: imageUrl, imagenLocal: localPath } : prev
+      );
+
+      Alert.alert("Éxito", "Imagen actualizada correctamente.");
+    } catch (err: any) {
+      console.error("Error cambiando imagen:", err);
+      Alert.alert("Error", err.message || "No se pudo cambiar la imagen.");
+    }
+  };
 
   if (loading) {
     return (
@@ -104,11 +174,15 @@ export default function ProfilePanel({ visible, onClose }: Props) {
               source={
                 avatarUrl
                   ? { uri: avatarUrl }
-                  : { uri: "https://firebasestorage.googleapis.com/v0/b/ucv-green-mobility-f98b1.appspot.com/o/default-user.png?alt=media" }
+                  : {
+                      uri: "https://firebasestorage.googleapis.com/v0/b/ucv-green-mobility-f98b1.appspot.com/o/default-user.png?alt=media",
+                    }
               }
               style={styles.avatar}
             />
-            <Text style={styles.change}>Cambiar</Text>
+            <TouchableOpacity onPress={handleChangeImage}>
+              <Text style={styles.change}>Cambiar</Text>
+            </TouchableOpacity>
           </View>
 
           <Text style={styles.label}>Nombre</Text>
@@ -138,8 +212,12 @@ export default function ProfilePanel({ visible, onClose }: Props) {
 
           <Text style={styles.label}>Contraseña</Text>
           <View style={styles.inputRow}>
-            <Text style={styles.inputText}>{profile?.password ? "••••••••" : ""}</Text>
-            <Ionicons name="eye-off" size={18} color="#9FBAB7" />
+            <Text style={styles.inputText}>
+              {showPassword ? profile?.password : profile?.password ? "••••••••" : ""}
+            </Text>
+            <TouchableOpacity onPress={() => setShowPassword((s) => !s)} style={{ paddingLeft: 8 }}>
+              <Ionicons name={showPassword ? "eye" : "eye-off"} size={18} color="#9FBAB7" />
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </View>
@@ -148,20 +226,45 @@ export default function ProfilePanel({ visible, onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
-  overlay: { position: "absolute", right: 18, top: 40, bottom: 40, width: 280, zIndex: 40 },
+  overlay: {
+    position: "absolute",
+    right: 18,
+    top: 40,
+    bottom: 40,
+    width: 280,
+    zIndex: 40,
+  },
   card: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 4,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.12,
     elevation: 8,
   },
   back: { position: "absolute", left: 12, top: 12, zIndex: 10 },
-  avatar: { width: 76, height: 76, borderRadius: 38, marginTop: 16 },
-  change: { fontFamily: fonts.text, color: "#7DAAA6", marginTop: 6 },
-  label: { fontFamily: fonts.title, color: "#2F6B66", marginTop: 12, marginBottom: 6 },
+  avatar: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    marginTop: 18,
+    borderWidth: 2,
+    borderColor: "#0d6e6e",
+  },
+  change: {
+    fontFamily: fonts.text,
+    color: "#0d6e6e",
+    marginTop: 6,
+    fontWeight: "bold",
+  },
+  label: {
+    fontFamily: fonts.title,
+    color: "#0d6e6e",
+    marginTop: 12,
+    marginBottom: 6,
+    fontSize: 13,
+  },
   input: { backgroundColor: "#ECF6F5", padding: 10, borderRadius: 12 },
   inputRow: {
     backgroundColor: "#ECF6F5",
