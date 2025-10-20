@@ -11,13 +11,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fonts } from "../theme/fonts";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
-
-// Firebase
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, query, where, getDocs, updateDoc } from "firebase/firestore";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db } from "../api/firebase";
 
 type Props = { visible: boolean; onClose: () => void };
@@ -29,8 +26,7 @@ type ProfileData = {
   dni?: string;
   ciclo?: string;
   password?: string;
-  imagen?: string; // URL en Firebase Storage
-  imagenLocal?: string; // Ruta local guardada 📁
+  imagenLocal?: string; // Solo local
   uid?: string;
 };
 
@@ -60,7 +56,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
           const data = snap.docs[0].data() as ProfileData;
           setProfile(data);
 
-          // Si existe imagen local, úsala
+          // Si hay imagen local y existe, úsala
           if (data.imagenLocal) {
             const info = await FileSystem.getInfoAsync(data.imagenLocal);
             if (info.exists) {
@@ -69,16 +65,6 @@ export default function ProfilePanel({ visible, onClose }: Props) {
               return;
             }
           }
-
-          // Si no hay local, carga desde Firebase
-          if (data.imagen) {
-            setAvatarUrl(data.imagen);
-          } else {
-            setAvatarUrl(null);
-          }
-        } else {
-          setProfile(null);
-          setAvatarUrl(null);
         }
       } catch (err) {
         console.warn("Error al cargar perfil:", err);
@@ -90,7 +76,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
     return () => unsub();
   }, [visible]);
 
-  // 📸 Cambiar imagen: elige, guarda localmente y sube a Firebase
+  // 📸 Cambiar imagen (solo local)
   const handleChangeImage = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -119,32 +105,18 @@ export default function ProfilePanel({ visible, onClose }: Props) {
         return;
       }
 
+      // Guardar la ruta local en Firestore (opcional, solo referencia)
       const q = query(collection(db, "Registro"), where("uid", "==", user.uid));
       const snap = await getDocs(q);
-      if (snap.empty) {
-        Alert.alert("Error", "No se encontró el documento del usuario.");
-        return;
+      if (!snap.empty) {
+        const docRef = snap.docs[0].ref;
+        await updateDoc(docRef, { imagenLocal: localPath });
       }
-      const docRef = snap.docs[0].ref;
-
-      const storage = getStorage();
-      const sRef = storageRef(storage, `profiles/${user.uid}.jpg`);
-
-      const blob = await (await fetch(uri)).blob();
-      await uploadBytes(sRef, blob);
-      const imageUrl = await getDownloadURL(sRef);
-
-      await updateDoc(docRef, {
-        imagen: imageUrl,
-        imagenLocal: localPath,
-      });
 
       setAvatarUrl(localPath);
-      setProfile((prev) =>
-        prev ? { ...prev, imagen: imageUrl, imagenLocal: localPath } : prev
-      );
+      setProfile((prev) => (prev ? { ...prev, imagenLocal: localPath } : prev));
 
-      Alert.alert("Éxito", "Imagen actualizada correctamente.");
+      Alert.alert("Éxito", "Imagen actualizada localmente.");
     } catch (err: any) {
       console.error("Error cambiando imagen:", err);
       Alert.alert("Error", err.message || "No se pudo cambiar la imagen.");
@@ -174,9 +146,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
               source={
                 avatarUrl
                   ? { uri: avatarUrl }
-                  : {
-                      uri: "https://firebasestorage.googleapis.com/v0/b/ucv-green-mobility-f98b1.appspot.com/o/default-user.png?alt=media",
-                    }
+                  : { uri: "https://firebasestorage.googleapis.com/v0/b/ucv-green-mobility-f98b1.appspot.com/o/default-user.png?alt=media" }
               }
               style={styles.avatar}
             />
