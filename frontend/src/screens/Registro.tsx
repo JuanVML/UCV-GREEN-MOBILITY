@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Animated,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
@@ -33,7 +34,7 @@ const Registro = () => {
   const subirImagen = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permiso denegado", "Se requiere acceso a tus fotos");
+      Alert.alert("Permiso denegado", "Se requiere acceso a tus fotos.");
       return;
     }
 
@@ -42,37 +43,29 @@ const Registro = () => {
       quality: 1,
     });
 
-    if (!result.canceled) {
-      setFoto(result.assets[0].uri);
-    }
+    if (!result.canceled) setFoto(result.assets[0].uri);
   };
 
   // === Validaciones ===
   const handlePasswordChange = (text: string) => {
     setPassword(text);
-    if (repeatPassword && text !== repeatPassword) {
+    if (repeatPassword && text !== repeatPassword)
       setPasswordError("Las contraseñas no coinciden");
-    } else {
-      setPasswordError("");
-    }
+    else setPasswordError("");
   };
 
   const handleRepeatPasswordChange = (text: string) => {
     setRepeatPassword(text);
-    if (password && text !== password) {
+    if (password && text !== password)
       setPasswordError("Las contraseñas no coinciden");
-    } else {
-      setPasswordError("");
-    }
+    else setPasswordError("");
   };
 
   const validateEmail = (correo: string) => {
     setEmail(correo);
-    if (correo.length > 0 && !correo.endsWith("@ucvvirtual.edu.pe")) {
+    if (correo.length > 0 && !correo.endsWith("@ucvvirtual.edu.pe"))
       setEmailError("Solo se permiten correos @ucvvirtual.edu.pe");
-    } else {
-      setEmailError("");
-    }
+    else setEmailError("");
   };
 
   // === REGISTRO ===
@@ -94,7 +87,7 @@ const Registro = () => {
           localImagePath = profilesDir + filename;
           await FileSystem.copyAsync({ from: foto, to: localImagePath });
         } catch (err) {
-          console.warn("No se pudo guardar la imagen:", err);
+          console.warn("No se pudo guardar la imagen local:", err);
           localImagePath = null;
         }
       }
@@ -107,35 +100,41 @@ const Registro = () => {
         carrera,
         ciclo,
         password: repeatPassword,
-        imagenLocal: localImagePath, // ruta local guardada
-        imagen: foto ?? null,        // ruta temporal
+        imagenLocal: localImagePath,
+        imagen: foto ?? null,
       });
 
       if (result.success) {
-        Alert.alert("✅ Registro exitoso", "Tu cuenta ha sido creada correctamente.");
+        Alert.alert(
+          "🌿 Bienvenido a Movilidad Verde UCV",
+          "Tu cuenta ha sido creada exitosamente. Gracias por unirte a nuestra comunidad sostenible 🚴‍♂️."
+        );
       } else {
-        Alert.alert("Error", result.error || "No se pudo registrar el usuario.");
+        Alert.alert("❌ Error", result.error || "No se pudo registrar el usuario.");
       }
     } catch (error: any) {
       console.error("Registro error:", error);
-      Alert.alert("Error", error.message || "No se pudo registrar");
+      Alert.alert("⚠️ Error inesperado", error.message || "No se pudo registrar.");
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Header */}
+      {/* HEADER */}
       <View style={styles.header}>
         <Image
           source={require("../../assets/images/logo moto.png")}
           style={styles.logo}
         />
-        <Text style={styles.headerTitle}>UCV Green Mobility</Text>
+        <Text style={styles.headerTitle}>Movilidad Verde UCV</Text>
+        <Text style={styles.subtitle}>
+          App para fomentar el uso compartido de bicicletas, scooters y rutas seguras 🚴‍♀️
+        </Text>
       </View>
 
-      {/* Formulario */}
+      {/* FORMULARIO */}
       <View style={styles.form}>
-        <Text style={styles.formTitle}>Regístrate</Text>
+        <Text style={styles.formTitle}>Crea tu cuenta sostenible</Text>
 
         <TextInput
           style={styles.input}
@@ -159,11 +158,9 @@ const Registro = () => {
           value={email}
           onChangeText={validateEmail}
         />
-        {emailError ? (
-          <Text style={{ color: "red", marginBottom: 8 }}>{emailError}</Text>
-        ) : null}
+        {emailError && <Text style={styles.errorText}>{emailError}</Text>}
 
-        {/* Fila carrera + ciclo + foto */}
+        {/* CARRERA Y CICLO */}
         <View style={styles.row}>
           <View style={styles.colLeft}>
             <TextInput
@@ -178,7 +175,7 @@ const Registro = () => {
               onPress={() => setMenuVisible(!menuVisible)}
             >
               <Text style={{ color: ciclo ? "#000" : "#777" }}>
-                {ciclo || "Ciclo"}
+                {ciclo || "Selecciona tu ciclo"}
               </Text>
             </TouchableOpacity>
 
@@ -211,22 +208,22 @@ const Registro = () => {
             )}
           </View>
 
-          {/* Imagen */}
+          {/* IMAGEN */}
           <View style={styles.uploadBox}>
             {foto ? (
               <Image source={{ uri: foto }} style={styles.fotoPreview} />
             ) : (
               <>
-                <Text style={styles.uploadLabel}>Foto</Text>
+                <Ionicons name="image-outline" size={28} color="#0d6e6e" />
                 <TouchableOpacity onPress={subirImagen}>
-                  <Text style={styles.uploadLink}>Subir Imagen</Text>
+                  <Text style={styles.uploadLink}>Subir Foto</Text>
                 </TouchableOpacity>
               </>
             )}
           </View>
         </View>
 
-        {/* Contraseña */}
+        {/* CONTRASEÑAS */}
         <View style={styles.passwordContainer}>
           <TextInput
             style={[styles.input, { flex: 1, marginBottom: 0 }]}
@@ -239,11 +236,14 @@ const Registro = () => {
             style={styles.eyeIcon}
             onPress={() => setShowPassword(!showPassword)}
           >
-            <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color="#888" />
+            <Ionicons
+              name={showPassword ? "eye-off" : "eye"}
+              size={22}
+              color="#0d6e6e"
+            />
           </TouchableOpacity>
         </View>
 
-        {/* Repite contraseña */}
         <View style={styles.passwordContainer}>
           <TextInput
             style={[styles.input, { flex: 1, marginBottom: 0 }]}
@@ -259,18 +259,17 @@ const Registro = () => {
             <Ionicons
               name={showRepeatPassword ? "eye-off" : "eye"}
               size={22}
-              color="#888"
+              color="#0d6e6e"
             />
           </TouchableOpacity>
         </View>
 
-        {passwordError ? (
-          <Text style={{ color: "red", marginBottom: 10 }}>{passwordError}</Text>
-        ) : null}
+        {passwordError && <Text style={styles.errorText}>{passwordError}</Text>}
 
-        {/* Botón enviar */}
+        {/* BOTÓN */}
         <TouchableOpacity style={styles.button} onPress={handleRegister}>
-          <Text style={styles.buttonText}>ENVIAR</Text>
+          <Ionicons name="leaf-outline" size={20} color="#fff" />
+          <Text style={styles.buttonText}>Unirme al movimiento verde</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -280,38 +279,42 @@ const Registro = () => {
 export default Registro;
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: "#ecf1f0" },
+  container: { flexGrow: 1, backgroundColor: "#e8f5f2" },
   header: {
     backgroundColor: "#0d6e6e",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 90,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    paddingVertical: 60,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
   },
-  logo: { width: 90, height: 90, resizeMode: "contain", marginBottom: 5 },
-  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "bold" },
+  logo: { width: 100, height: 100, resizeMode: "contain", marginBottom: 5 },
+  headerTitle: { color: "#fff", fontSize: 22, fontWeight: "bold" },
+  subtitle: { color: "#c8f5e4", fontSize: 13, textAlign: "center", marginTop: 5 },
   form: {
     flex: 1,
-    backgroundColor: "#ecf1f0",
-    marginTop: -70,
+    backgroundColor: "#fff",
+    marginTop: -40,
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     padding: 30,
-    elevation: 5,
+    elevation: 6,
   },
   formTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#0d6e6e",
-    marginBottom: 15,
+    marginBottom: 20,
+    textAlign: "center",
   },
   input: {
-    backgroundColor: "#fff",
+    backgroundColor: "#f4f8f7",
     borderRadius: 10,
     padding: 12,
     marginBottom: 15,
     fontSize: 14,
+    borderWidth: 1,
+    borderColor: "#d9e6e2",
   },
   row: {
     flexDirection: "row",
@@ -319,19 +322,23 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   colLeft: { flex: 1, marginRight: 10 },
-  inputHalfFix: { width: "100%" },
   uploadBox: {
     width: 100,
     height: 100,
     borderRadius: 10,
-    backgroundColor: "#fff",
+    backgroundColor: "#f4f8f7",
     alignItems: "center",
     justifyContent: "center",
-    padding: 5,
+    borderWidth: 1,
+    borderColor: "#c8ded6",
   },
-  uploadLabel: { fontSize: 12, color: "#777", marginBottom: 5 },
-  uploadLink: { color: "purple", fontSize: 13, fontWeight: "bold" },
-  fotoPreview: { width: "100%", height: "100%", borderRadius: 10, resizeMode: "cover" },
+  uploadLink: { color: "#0d6e6e", fontSize: 13, fontWeight: "bold", marginTop: 5 },
+  fotoPreview: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 10,
+    resizeMode: "cover",
+  },
   dropdown: {
     backgroundColor: "#fff",
     borderRadius: 10,
@@ -346,15 +353,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     marginTop: 10,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
   },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  buttonText: { color: "#fff", fontSize: 15, fontWeight: "bold" },
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
     width: "100%",
     marginBottom: 15,
-    backgroundColor: "#fff",
+    backgroundColor: "#f4f8f7",
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#d9e6e2",
   },
   eyeIcon: {
     padding: 10,
@@ -362,4 +374,5 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
   },
+  errorText: { color: "red", marginBottom: 8 },
 });

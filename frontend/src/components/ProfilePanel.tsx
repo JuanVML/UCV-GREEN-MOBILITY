@@ -1,3 +1,4 @@
+// ✅ Importaciones necesarias
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -10,16 +11,19 @@ import {
   Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { fonts } from "../theme/fonts";
-import * as FileSystem from "expo-file-system/legacy";
+import * as FileSystem from "expo-file-system/legacy"; // versión legacy para compatibilidad
 import * as ImagePicker from "expo-image-picker";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { auth, db } from "../api/firebase";
 import { useUser } from "../context/UserContext";
 
+// Props recibidos desde el componente padre
 type Props = { visible: boolean; onClose: () => void };
 
+// Tipo del perfil del usuario
 type ProfileData = {
   name?: string;
   email?: string;
@@ -31,19 +35,24 @@ type ProfileData = {
   uid?: string;
 };
 
+// 🌿 Componente principal del panel de perfil
 export default function ProfilePanel({ visible, onClose }: Props) {
-  if (!visible) return null;
+  if (!visible) return null; // Si no está visible, no renderiza nada
 
+  // 🔹 Estados del componente
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [successVisible, setSuccessVisible] = useState(false);
 
+  // Animación del toast
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Contexto global (para compartir avatar)
   const { updateAvatar } = useUser();
 
-  // 🔹 Mostrar notificación animada
+  // 🔔 Función para mostrar el toast de éxito animado
   const showSuccessToast = (message: string) => {
     setSuccessVisible(true);
     Animated.timing(fadeAnim, {
@@ -52,6 +61,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
       useNativeDriver: true,
     }).start();
 
+    // Ocultar el toast luego de 2.5 segundos
     setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -61,7 +71,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
     }, 2500);
   };
 
-  // 🔹 Cargar perfil
+  // 🔹 Cargar el perfil del usuario desde Firebase cuando se monta el componente
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -72,6 +82,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
       }
 
       try {
+        // Consulta en Firestore el perfil del usuario autenticado
         const q = query(collection(db, "Registro"), where("uid", "==", user.uid));
         const snap = await getDocs(q);
 
@@ -79,6 +90,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
           const data = snap.docs[0].data() as ProfileData;
           setProfile(data);
 
+          // Si hay imagen local, verificamos que exista en el dispositivo
           if (data.imagenLocal) {
             const info = await FileSystem.getInfoAsync(data.imagenLocal);
             if (info.exists) {
@@ -89,6 +101,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
             }
           }
 
+          // Si no hay imagen local, usar la imagen por defecto
           setAvatarUrl(
             data.imagenLocal ??
               "https://firebasestorage.googleapis.com/v0/b/ucv-green-mobility-f98b1.appspot.com/o/default-user.png?alt=media"
@@ -105,15 +118,17 @@ export default function ProfilePanel({ visible, onClose }: Props) {
     return () => unsub();
   }, [visible]);
 
-  // 📸 Cambiar imagen (local + contexto)
+  // 📸 Cambiar imagen del perfil (solo localmente y en Firestore)
   const handleChangeImage = async () => {
     try {
+      // Pedir permiso de acceso a la galería
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         showSuccessToast("Permiso denegado para acceder a galería.");
         return;
       }
 
+      // Abrir galería
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -123,12 +138,14 @@ export default function ProfilePanel({ visible, onClose }: Props) {
       if (result.canceled || !result.assets?.length) return;
 
       const uri = result.assets[0].uri;
+
+      // Guardar imagen localmente
       const profilesDir = FileSystem.documentDirectory + "profiles/";
       await FileSystem.makeDirectoryAsync(profilesDir, { intermediates: true });
-
       const localPath = profilesDir + `${Date.now()}.jpg`;
       await FileSystem.copyAsync({ from: uri, to: localPath });
 
+      // Actualizar referencia en Firestore
       const user = auth.currentUser;
       if (!user) {
         showSuccessToast("Error: usuario no autenticado.");
@@ -142,6 +159,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
         await updateDoc(docRef, { imagenLocal: localPath });
       }
 
+      // Actualizar estados locales y globales
       setAvatarUrl(localPath);
       setProfile((prev) => (prev ? { ...prev, imagenLocal: localPath } : prev));
       updateAvatar(localPath);
@@ -153,75 +171,95 @@ export default function ProfilePanel({ visible, onClose }: Props) {
     }
   };
 
+  // ⏳ Pantalla de carga mientras se obtiene la información
   if (loading) {
     return (
       <View style={styles.overlay}>
-        <View style={styles.card}>
-          <ActivityIndicator size="large" color="#2F6B66" style={{ marginTop: 40 }} />
-        </View>
+        <LinearGradient colors={["#E3F9EE", "#F8FFFB"]} style={styles.card}>
+          <ActivityIndicator size="large" color="#167D67" style={{ marginTop: 40 }} />
+        </LinearGradient>
       </View>
     );
   }
 
+  // 🌿 UI principal del panel
   return (
-    <View style={styles.overlay}>
+    <LinearGradient colors={["#E3F9EE", "#F8FFFB"]} style={styles.overlay}>
       <View style={styles.card}>
+        {/* Botón de regreso */}
         <TouchableOpacity style={styles.back} onPress={onClose}>
-          <Ionicons name="arrow-back" size={20} color="#2F6B66" />
+          <Ionicons name="arrow-back" size={22} color="#167D67" />
         </TouchableOpacity>
 
-        <ScrollView contentContainerStyle={{ padding: 18 }}>
-          <View style={{ alignItems: "center", marginBottom: 8 }}>
-            <Image
-              source={{
-                uri:
-                  avatarUrl ??
-                  "https://firebasestorage.googleapis.com/v0/b/ucv-green-mobility-f98b1.appspot.com/o/default-user.png?alt=media",
-              }}
-              style={styles.avatar}
-            />
-            <TouchableOpacity onPress={handleChangeImage}>
-              <Text style={styles.change}>Cambiar</Text>
+        {/* Contenido con scroll */}
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 0 }}>
+          {/* Imagen del perfil con anillo verde */}
+          <View style={styles.avatarContainer}>
+            <LinearGradient colors={["#19A974", "#6AE58F"]} style={styles.avatarBorder}>
+              <Image
+                source={{
+                  uri:
+                    avatarUrl ??
+                    "https://firebasestorage.googleapis.com/v0/b/ucv-green-mobility-f98b1.appspot.com/o/default-user.png?alt=media",
+                }}
+                style={styles.avatar}
+              />
+            </LinearGradient>
+
+            {/* Botón para cambiar imagen */}
+            <TouchableOpacity style={styles.changeButton} onPress={handleChangeImage}>
+              <Ionicons name="camera-outline" size={16} color="#fff" />
+              <Text style={styles.changeText}>Actualizar foto</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.label}>Nombre</Text>
-          <View style={styles.input}>
-            <Text style={styles.inputText}>{profile?.name ?? ""}</Text>
+          {/* Título */}
+          <Text style={styles.title}>Perfil UCV</Text>
+
+          {/* Campos del usuario */}
+          <View style={styles.field}>
+            <Ionicons name="person-outline" size={16} color="#19A974" />
+            <Text style={styles.fieldText}>{profile?.name ?? "Sin nombre"}</Text>
           </View>
 
-          <Text style={styles.label}>Correo Institucional</Text>
-          <View style={styles.input}>
-            <Text style={styles.inputText}>{profile?.email ?? ""}</Text>
+          <View style={styles.field}>
+            <Ionicons name="mail-outline" size={16} color="#19A974" />
+            <Text style={styles.fieldText}>{profile?.email ?? ""}</Text>
           </View>
 
-          <Text style={styles.label}>Carrera</Text>
-          <View style={styles.input}>
-            <Text style={styles.inputText}>{profile?.carrera ?? ""}</Text>
+          <View style={styles.field}>
+            <Ionicons name="school-outline" size={16} color="#19A974" />
+            <Text style={styles.fieldText}>{profile?.carrera ?? ""}</Text>
           </View>
 
-          <Text style={styles.label}>DNI</Text>
-          <View style={styles.input}>
-            <Text style={styles.inputText}>{profile?.dni ?? ""}</Text>
+          <View style={styles.field}>
+            <Ionicons name="id-card-outline" size={16} color="#19A974" />
+            <Text style={styles.fieldText}>{profile?.dni ?? ""}</Text>
           </View>
 
-          <Text style={styles.label}>Ciclo</Text>
-          <View style={styles.input}>
-            <Text style={styles.inputText}>{profile?.ciclo ?? ""}</Text>
+          <View style={styles.field}>
+            <Ionicons name="bicycle-outline" size={16} color="#19A974" />
+            <Text style={styles.fieldText}>{profile?.ciclo ?? ""}</Text>
           </View>
 
-          <Text style={styles.label}>Contraseña</Text>
-          <View style={styles.inputRow}>
-            <Text style={styles.inputText}>
+          {/* Campo de contraseña con toggle */}
+          <View style={[styles.field, { marginBottom: 0 }]}>
+            <Ionicons name="lock-closed-outline" size={16} color="#19A974" />
+            <Text style={styles.fieldText}>
               {showPassword ? profile?.password : profile?.password ? "••••••••" : ""}
             </Text>
-            <TouchableOpacity onPress={() => setShowPassword((s) => !s)} style={{ paddingLeft: 8 }}>
-              <Ionicons name={showPassword ? "eye" : "eye-off"} size={18} color="#9FBAB7" />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons
+                name={showPassword ? "eye" : "eye-off"}
+                size={18}
+                color="#888"
+                style={{ marginLeft: 6 }}
+              />
             </TouchableOpacity>
           </View>
         </ScrollView>
 
-        {/* ✅ Toast de éxito personalizado */}
+        {/* Toast animado */}
         {successVisible && (
           <Animated.View style={[styles.toast, { opacity: fadeAnim }]}>
             <Ionicons name="leaf" size={22} color="#fff" style={{ marginRight: 6 }} />
@@ -229,78 +267,114 @@ export default function ProfilePanel({ visible, onClose }: Props) {
           </Animated.View>
         )}
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
+// 🎨 Estilos visuales
 const styles = StyleSheet.create({
   overlay: {
     position: "absolute",
-    right: 18,
-    top: 40,
-    bottom: 40,
-    width: 280,
+    right: 10,
+    top: 50, // antes 40 → reduce espacio superior
+    bottom: 180, // antes 40 → reduce espacio inferior
+    width: 300,
     zIndex: 40,
+    borderRadius: 20,
   },
   card: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    elevation: 8,
+    backgroundColor: "rgba(255,255,255,0.85)",
+    borderRadius: 24,
+    shadowColor: "#19A974",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 10,
+    overflow: "hidden",
   },
-  back: { position: "absolute", left: 12, top: 12, zIndex: 10 },
+  back: {
+    position: "absolute",
+    left: 16,
+    top: 16,
+    zIndex: 10,
+    backgroundColor: "#acf4d5ff",
+    padding: 6,
+    borderRadius: 20,
+  },
+  avatarContainer: { alignItems: "center", marginTop: 40, marginBottom: 16 },
+  avatarBorder: { padding: 3, borderRadius: 60 },
   avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    marginTop: 18,
-    borderWidth: 2,
-    borderColor: "#0d6e6e",
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 3,
+    borderColor: "#fff",
   },
-  change: {
-    fontFamily: fonts.text,
-    color: "#0d6e6e",
-    marginTop: 6,
-    fontWeight: "bold",
-  },
-  label: {
-    fontFamily: fonts.title,
-    color: "#0d6e6e",
-    marginTop: 12,
-    marginBottom: 6,
-    fontSize: 13,
-  },
-  input: { backgroundColor: "#ECF6F5", padding: 10, borderRadius: 12 },
-  inputRow: {
-    backgroundColor: "#ECF6F5",
-    padding: 10,
-    borderRadius: 12,
+  changeButton: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    backgroundColor: "#19A974",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginTop: 10,
+    shadowColor: "#19A974",
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
   },
-  inputText: { fontFamily: fonts.text, color: "#2E6D68" },
+  changeText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontFamily: fonts.text,
+    marginLeft: 6,
+  },
+  title: {
+    fontFamily: fonts.title,
+    fontSize: 16,
+    color: "#167D67",
+    marginBottom: 10,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  field: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#e4f7f2ff",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 13,
+    marginBottom: 6, // antes 10 → menos espacio entre campos
+    shadowColor: "#19A974",
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  fieldText: {
+    flex: 1,
+    fontFamily: fonts.text,
+    color: "#194F42",
+    fontSize: 13,
+    marginLeft: 8,
+  },
   toast: {
     position: "absolute",
-    bottom: 20,
+    bottom: 24,
     alignSelf: "center",
-    backgroundColor: "#1B7F6C",
-    paddingHorizontal: 16,
+    backgroundColor: "#19A974",
+    paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: 30,
+    borderRadius: 50,
     flexDirection: "row",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 6,
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 8,
   },
   toastText: {
     color: "#fff",
     fontWeight: "600",
     fontFamily: fonts.text,
+    fontSize: 14,
   },
 });
