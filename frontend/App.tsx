@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { LogBox, View, Text } from 'react-native';
-import * as Font from 'expo-font';
-import { NavigationContainer } from '@react-navigation/native';
-import AppNavigator from './src/navigation/appNavigator';
-import { AuthProvider } from './src/context/AuthContext';
-import { ThemeProvider as AppThemeProvider } from './src/context/ThemeContext';
-import { ChatProvider } from './src/context/ChatContext';
-import { auth } from './src/api/firebase';
+// App.tsx
+import React, { useEffect, useState } from "react";
+import { LogBox, View } from "react-native";
+import * as Font from "expo-font";
+import { NavigationContainer } from "@react-navigation/native";
+import AppNavigator from "./src/navigation/appNavigator";
+import { AuthProvider } from "./src/context/AuthContext";
+import { ThemeProvider as AppThemeProvider } from "./src/context/ThemeContext";
+import { ChatProvider } from "./src/context/ChatContext";
+import { UserProvider } from "./src/context/UserContext"; // ✅ nuevo
+
+import { auth } from "./src/api/firebase";
 
 LogBox.ignoreAllLogs(true);
 
@@ -37,15 +40,15 @@ export default function App() {
   return (
     <AppThemeProvider>
       <AuthProvider>
-        <ChatProvider>
-          <NavigationContainer>
-            <AppNavigator />
-          </NavigationContainer>
-        </ChatProvider>
+        <UserProvider>
+          <ChatProvider>
+            <NavigationContainer>
+              <AppNavigator />
+            </NavigationContainer>
+          </ChatProvider>
+        </UserProvider>
       </AuthProvider>
-      <View>
-   
-      </View>
+      <View></View>
     </AppThemeProvider>
   );
 }

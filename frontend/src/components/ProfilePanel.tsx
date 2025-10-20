@@ -16,6 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { auth, db } from "../api/firebase";
+import { useUser } from "../context/UserContext"; // ✅ Importa el contexto
 
 type Props = { visible: boolean; onClose: () => void };
 
@@ -26,7 +27,7 @@ type ProfileData = {
   dni?: string;
   ciclo?: string;
   password?: string;
-  imagenLocal?: string; // Solo local
+  imagenLocal?: string; // ruta local
   uid?: string;
 };
 
@@ -38,7 +39,9 @@ export default function ProfilePanel({ visible, onClose }: Props) {
   const [loading, setLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
-  // 🔹 Cargar perfil
+  const { updateAvatar } = useUser(); // ✅ usar contexto para sincronizar avatar global
+
+  // 🔹 Cargar perfil desde Firestore y local
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -56,15 +59,23 @@ export default function ProfilePanel({ visible, onClose }: Props) {
           const data = snap.docs[0].data() as ProfileData;
           setProfile(data);
 
-          // Si hay imagen local y existe, úsala
+          // Si hay imagen local y existe
           if (data.imagenLocal) {
             const info = await FileSystem.getInfoAsync(data.imagenLocal);
             if (info.exists) {
               setAvatarUrl(data.imagenLocal);
+              updateAvatar(data.imagenLocal); // ✅ actualizar contexto global
               setLoading(false);
               return;
             }
           }
+
+          // Si no hay imagen local, usar imagen remota o default
+          setAvatarUrl(
+            data.imagenLocal ??
+              "https://firebasestorage.googleapis.com/v0/b/ucv-green-mobility-f98b1.appspot.com/o/default-user.png?alt=media"
+          );
+          updateAvatar(data.imagenLocal ?? ""); // actualiza el contexto
         }
       } catch (err) {
         console.warn("Error al cargar perfil:", err);
@@ -76,7 +87,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
     return () => unsub();
   }, [visible]);
 
-  // 📸 Cambiar imagen (solo local)
+  // 📸 Cambiar imagen (local y sincroniza contexto)
   const handleChangeImage = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -87,6 +98,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
         quality: 0.8,
       });
 
@@ -105,7 +117,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
         return;
       }
 
-      // Guardar la ruta local en Firestore (opcional, solo referencia)
+      // Guardar la referencia local en Firestore (opcional)
       const q = query(collection(db, "Registro"), where("uid", "==", user.uid));
       const snap = await getDocs(q);
       if (!snap.empty) {
@@ -115,8 +127,9 @@ export default function ProfilePanel({ visible, onClose }: Props) {
 
       setAvatarUrl(localPath);
       setProfile((prev) => (prev ? { ...prev, imagenLocal: localPath } : prev));
+      updateAvatar(localPath); // ✅ sincroniza con el Header
 
-      Alert.alert("Éxito", "Imagen actualizada localmente.");
+      Alert.alert("Éxito", "Imagen actualizada correctamente.");
     } catch (err: any) {
       console.error("Error cambiando imagen:", err);
       Alert.alert("Error", err.message || "No se pudo cambiar la imagen.");
@@ -143,11 +156,11 @@ export default function ProfilePanel({ visible, onClose }: Props) {
         <ScrollView contentContainerStyle={{ padding: 18 }}>
           <View style={{ alignItems: "center", marginBottom: 8 }}>
             <Image
-              source={
-                avatarUrl
-                  ? { uri: avatarUrl }
-                  : { uri: "https://firebasestorage.googleapis.com/v0/b/ucv-green-mobility-f98b1.appspot.com/o/default-user.png?alt=media" }
-              }
+              source={{
+                uri:
+                  avatarUrl ??
+                  "https://firebasestorage.googleapis.com/v0/b/ucv-green-mobility-f98b1.appspot.com/o/default-user.png?alt=media",
+              }}
               style={styles.avatar}
             />
             <TouchableOpacity onPress={handleChangeImage}>

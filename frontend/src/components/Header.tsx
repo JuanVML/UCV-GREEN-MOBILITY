@@ -1,4 +1,4 @@
-// frontend/src/components/Header.tsx
+// src/components/Header.tsx
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -10,6 +10,7 @@ import {
   Animated,
 } from "react-native";
 import { fonts } from "../theme/fonts";
+import { useUser } from "../context/UserContext";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db } from "../api/firebase";
@@ -19,35 +20,42 @@ type Props = {
 };
 
 export default function Header({ onAvatarPress }: Props) {
-  const [displayName, setDisplayName] = useState<string>("Usuario");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const { user, setUser } = useUser();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [pulseAnim] = useState(new Animated.Value(1));
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
-      if (!user) {
-        setDisplayName("Usuario");
-        setAvatarUrl(null);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
+      if (!firebaseUser) {
+        setUser(null);
         return;
       }
 
       try {
-        const q = query(collection(db, "Registro"), where("uid", "==", user.uid));
+        const q = query(collection(db, "Registro"), where("uid", "==", firebaseUser.uid));
         const snap = await getDocs(q);
 
         if (!snap.empty) {
           const data = snap.docs[0].data() as any;
-          setDisplayName(data.name ?? user.displayName ?? "Usuario");
-          setAvatarUrl(data.imagen ?? user.photoURL ?? null);
+          setUser({
+            name: data.name ?? firebaseUser.displayName ?? "Usuario",
+            email: data.email ?? firebaseUser.email ?? "",
+            avatar: data.imagen ?? firebaseUser.photoURL ?? null,
+          });
         } else {
-          setDisplayName(user.displayName ?? "Usuario");
-          setAvatarUrl(user.photoURL ?? null);
+          setUser({
+            name: firebaseUser.displayName ?? "Usuario",
+            email: firebaseUser.email ?? "",
+            avatar: firebaseUser.photoURL ?? null,
+          });
         }
       } catch (err) {
         console.warn("Header: error al obtener perfil", err);
-        setDisplayName(user.displayName ?? "Usuario");
-        setAvatarUrl(user.photoURL ?? null);
+        setUser({
+          name: firebaseUser.displayName ?? "Usuario",
+          email: firebaseUser.email ?? "",
+          avatar: firebaseUser.photoURL ?? null,
+        });
       }
     });
 
@@ -81,10 +89,12 @@ export default function Header({ onAvatarPress }: Props) {
     month: "short",
   });
 
+  const avatarUrl =
+    user?.avatar ?? "https://cdn-icons-png.flaticon.com/512/219/219986.png";
+
   return (
     <View style={styles.headerContainer}>
       <View style={styles.topRow}>
-        {/* Logo institucional con animación */}
         <Animated.Image
           source={require("../../assets/images/logo.png")}
           style={[
@@ -93,23 +103,15 @@ export default function Header({ onAvatarPress }: Props) {
           ]}
         />
 
-        {/* Botón de avatar (abre menú de perfil, modo oscuro, salir, etc.) */}
         <TouchableOpacity onPress={onAvatarPress} style={styles.avatarWrap}>
-          <Image
-            source={{
-              uri:
-                avatarUrl ??
-                "https://cdn-icons-png.flaticon.com/512/219/219986.png",
-            }}
-            style={styles.avatar}
-          />
+          <Image source={{ uri: avatarUrl }} style={styles.avatar} />
         </TouchableOpacity>
       </View>
 
       <Text style={styles.subtitle}>Campus sostenible y conectado 🌱</Text>
 
       <View style={styles.greetingRow}>
-        <Text style={styles.greeting}>Hola, {displayName}</Text>
+        <Text style={styles.greeting}>Hola, {user?.name ?? "Usuario"}</Text>
         <View style={styles.datePill}>
           <Text style={styles.dateText}>{formattedDate}</Text>
         </View>

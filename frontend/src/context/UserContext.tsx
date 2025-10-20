@@ -1,27 +1,36 @@
 // src/context/UserContext.tsx
-import React, { createContext, useState, ReactNode } from "react";
+import React, { createContext, useState, useContext, ReactNode } from "react";
 
-type User = {
+type UserData = {
   name: string;
   email: string;
+  avatar: string | null;
 };
 
 type UserContextType = {
-  user: User | null;
-  setUser: (user: User | null) => void;
+  user: UserData | null;
+  setUser: (user: UserData | null) => void;
+  updateAvatar: (uri: string) => void;
 };
 
-export const UserContext = createContext<UserContextType>({
+const UserContext = createContext<UserContextType>({
   user: null,
   setUser: () => {},
+  updateAvatar: () => {},
 });
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
+
+  const updateAvatar = (uri: string) => {
+    if (user) setUser({ ...user, avatar: uri });
+  };
 
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <UserContext.Provider value={{ user, setUser, updateAvatar }}>
       {children}
     </UserContext.Provider>
   );
 }
+
+export const useUser = () => useContext(UserContext);
