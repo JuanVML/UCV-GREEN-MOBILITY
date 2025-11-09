@@ -1,88 +1,210 @@
 import { useState, useEffect } from 'react';
-import { MovilShareUser } from '../types/movilshare';
+import { MovilShareUser, CreateLoanRequest, LoanDetails } from '../types/movilshare';
 
 // TODO: Reemplazar con datos reales del backend
-const mockUsers: MovilShareUser[] = [
+const mockLoans: MovilShareUser[] = [
   {
     id: '1',
-    name: 'Fabrizzio Medina',
-    location: 'Puerta Principal',
-    time: '7:30 am',
-    avatar: require('../../assets/images/avatar.png')
+    ownerId: 'user1',
+    ownerName: 'Fabrizzio Medina',
+    avatar: require('../../assets/images/avatar.png'),
+    vehicleType: 'bicycle',
+    vehicleDescription: 'Bicicleta MTB roja en buen estado',
+    campusGate: 'Puerta Principal',
+    returnTime: '11:30 AM',
+    waitingTime: 5,
+    arrivalInstructions: 'Bajo del 3er piso, esperarme unos minutos',
+    status: 'available',
+    requirements: 'Traer candado propio',
+    createdAt: new Date(),
   },
   {
     id: '2',
-    name: 'Alberth Lopez', 
-    location: 'Puerta 2',
-    time: '7:30 am',
-    avatar: require('../../assets/images/avatar.png')
+    ownerId: 'user2',
+    ownerName: 'Alberth Lopez',
+    avatar: require('../../assets/images/avatar.png'),
+    vehicleType: 'scooter',
+    vehicleDescription: 'Scooter eléctrico negro Xiaomi',
+    campusGate: 'Puerta 2',
+    returnTime: '12:30 PM',
+    waitingTime: 10,
+    status: 'available',
+    requirements: 'Devolver con batería cargada',
+    createdAt: new Date(),
   },
   {
     id: '3',
-    name: 'Juan Muños',
-    location: 'Puerta Principal',
-    time: '12:30 pm',
-    avatar: require('../../assets/images/avatar.png')
+    ownerId: 'user3',
+    ownerName: 'Juan Muños',
+    avatar: require('../../assets/images/avatar.png'),
+    vehicleType: 'bicycle',
+    vehicleDescription: 'Bicicleta de paseo azul',
+    campusGate: 'Puerta Principal',
+    returnTime: '4:30 PM',
+    waitingTime: 5,
+    arrivalInstructions: 'Salgo de laboratorio, esperarme máximo 10 min',
+    status: 'available',
+    createdAt: new Date(),
   },
   {
     id: '4',
-    name: 'Rony Guanachin',
-    location: 'Puerta 3',
-    time: '1:30 pm',
-    avatar: require('../../assets/images/avatar.png')
-  }
+    ownerId: 'user4',
+    ownerName: 'Rony Guanachin',
+    avatar: require('../../assets/images/avatar.png'),
+    vehicleType: 'scooter',
+    campusGate: 'Puerta 3',
+    returnTime: '5:30 PM',
+    waitingTime: 15,
+    status: 'reserved',
+    createdAt: new Date(),
+  },
 ];
 
 export const useMovilShare = () => {
-  const [users, setUsers] = useState<MovilShareUser[]>([]);
+  const [loans, setLoans] = useState<MovilShareUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isRequesting, setIsRequesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Simular carga de datos
   useEffect(() => {
-    const loadUsers = async () => {
+    const loadLoans = async () => {
       try {
         setIsLoading(true);
         // TODO: Reemplazar con llamada real a la API
-        // const response = await api.getMovilShareUsers();
+        // const response = await api.getMovilShareLoans();
         
         // Simular delay de red
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        setUsers(mockUsers);
+        setLoans(mockLoans);
         setError(null);
       } catch (err) {
-        setError('Error al cargar los usuarios');
-        console.error('Error loading MovilShare users:', err);
+        setError('Error al cargar los préstamos');
+        console.error('Error loading MovilShare loans:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadUsers();
+    loadLoans();
   }, []);
 
-  const refreshUsers = async () => {
+  const refreshLoans = async () => {
     // TODO: Implementar refresh real de datos
-    console.log('Refreshing MovilShare users...');
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setLoans(mockLoans);
+    setIsLoading(false);
   };
 
-  const createMeetingPoint = async (location: string, time: string) => {
-    // TODO: Implementar creación de punto de encuentro
-    console.log('Creating meeting point:', { location, time });
+  const createLoan = async (loanData: CreateLoanRequest): Promise<boolean> => {
+    try {
+      setIsCreating(true);
+      
+      // TODO: Reemplazar con llamada real a la API
+      // const response = await api.createMovilShareLoan(loanData);
+      
+      // Simular delay de red
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Crear nuevo préstamo mock
+      const newLoan: MovilShareUser = {
+        id: `loan_${Date.now()}`,
+        ownerId: 'current_user',
+        ownerName: 'Tú',
+        avatar: require('../../assets/images/avatar.png'),
+        ...loanData,
+        status: 'available',
+        createdAt: new Date(),
+        isNew: true,
+      };
+      
+      // Agregar al inicio de la lista
+      setLoans(prevLoans => [newLoan, ...prevLoans]);
+      
+      // Quitar el indicador "nuevo" después de 5 segundos
+      setTimeout(() => {
+        setLoans(prevLoans =>
+          prevLoans.map(loan =>
+            loan.id === newLoan.id ? { ...loan, isNew: false } : loan
+          )
+        );
+      }, 5000);
+      
+      return true;
+    } catch (err) {
+      console.error('Error creating loan:', err);
+      setError('Error al crear el préstamo');
+      return false;
+    } finally {
+      setIsCreating(false);
+    }
   };
 
-  const joinUser = async (userId: string) => {
-    // TODO: Implementar unirse a un usuario
-    console.log('Joining user:', userId);
+  const getLoanDetails = async (loanId: string): Promise<LoanDetails | null> => {
+    try {
+      // TODO: Reemplazar con llamada real a la API
+      // const response = await api.getLoanDetails(loanId);
+      
+      // Simular delay de red
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const loan = loans.find(l => l.id === loanId);
+      
+      if (!loan) return null;
+      
+      // Agregar datos adicionales para el modal de detalles
+      const details: LoanDetails = {
+        ...loan,
+        ownerPhone: '+51 999 888 777',
+        ownerEmail: 'usuario@ucv.edu.pe',
+      };
+      
+      return details;
+    } catch (err) {
+      console.error('Error getting loan details:', err);
+      return null;
+    }
+  };
+
+  const requestLoan = async (loanId: string): Promise<boolean> => {
+    try {
+      setIsRequesting(true);
+      
+      // TODO: Reemplazar con llamada real a la API
+      // const response = await api.requestLoan(loanId);
+      
+      // Simular delay de red
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Actualizar el estado del préstamo a "reserved"
+      setLoans(prevLoans =>
+        prevLoans.map(loan =>
+          loan.id === loanId ? { ...loan, status: 'reserved' } : loan
+        )
+      );
+      
+      return true;
+    } catch (err) {
+      console.error('Error requesting loan:', err);
+      setError('Error al solicitar el préstamo');
+      return false;
+    } finally {
+      setIsRequesting(false);
+    }
   };
 
   return {
-    users,
+    loans,
     isLoading,
+    isCreating,
+    isRequesting,
     error,
-    refreshUsers,
-    createMeetingPoint,
-    joinUser,
+    refreshLoans,
+    createLoan,
+    getLoanDetails,
+    requestLoan,
   };
 };
