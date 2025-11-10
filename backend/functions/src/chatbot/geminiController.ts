@@ -1,13 +1,3 @@
-// import { Request, Response } from 'express';
-// import { GoogleGenerativeAI } from '@google/generative-ai';
-
-// Para Firebase Functions, usarías algo como:
-// import * as functions from 'firebase-functions';
-
-// Configuración de Gemini (descomentarías esto en producción)
-// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-// const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
 interface ChatRequest {
   message: string;
   userId?: string;
@@ -17,211 +7,260 @@ interface ChatRequest {
 interface ChatResponse {
   response: string;
   timestamp: string;
-  conversationId?: string;
+  conversationId: string;
 }
 
 interface ConversationMessage {
-  id: string;
-  userMessage: string;
-  botResponse: string;
+  role: string;
+  content: string;
   timestamp: string;
-  userId: string;
 }
 
 /**
- * Maneja las peticiones de chat con Gemini
- * Ejemplo de uso en Firebase Functions:
- * 
- * export const sendMessage = functions.https.onRequest(async (req, res) => {
- *   // Implementación aquí
- * });
+ * 🔵 FASE REFACTOR - CÓDIGO MEJORADO Y LIMPIO
+ * Mejora: Funciones auxiliares para mejor organización y mantenibilidad
  */
+
+// 🔧 Función auxiliar para validar mensaje
+const validateMessage = (message: string): void => {
+  console.log('🔵 [HELPER] Ejecutando validación de mensaje...');
+  
+  if (!message || message.trim().length === 0) {
+    console.log('🔵 [VALIDACIÓN] ❌ Mensaje inválido detectado');
+    throw new Error('El mensaje es requerido');
+  }
+  
+  console.log('🔵 [VALIDACIÓN] ✅ Mensaje válido');
+};
+
+// 🔧 Función auxiliar para generar ID de conversación
+const generateConversationId = (userId?: string): string => {
+  const userIdPart = userId || 'anonymous';
+  const timestamp = Date.now();
+  const conversationId = `conv_${userIdPart}_${timestamp}`;
+  
+  console.log('🔵 [HELPER] ConversationId generado:', conversationId);
+  
+  return conversationId;
+};
+
+// 🔧 Función auxiliar para crear respuesta simulada
+const createSimulatedResponse = (message: string, conversationId: string): ChatResponse => {
+  console.log('🔵 [HELPER] Generando respuesta simulada...');
+  
+  const response: ChatResponse = {
+    response: `Gracias por tu mensaje: "${message}". Como asistente de movilidad sostenible, te recomiendo considerar opciones de transporte ecológico como bicicletas, transporte público eléctrico o caminar cuando sea posible. ¿Te gustaría saber más sobre alguna opción específica?`,
+    timestamp: new Date().toISOString(),
+    conversationId,
+  };
+  
+  console.log('🔵 [HELPER] Respuesta creada exitosamente');
+  
+  return response;
+};
+
 export const sendMessage = async (requestData: any): Promise<ChatResponse> => {
   try {
+    console.log('\n🔵 ═══════════════════════════════════════');
+    console.log('🔵 FASE REFACTOR - Iniciando sendMessage...');
+    console.log('🔵 [MEJORA] Usando funciones auxiliares para código más limpio');
+    console.log('🔵 ═══════════════════════════════════════');
+    
     const { message, userId, context }: ChatRequest = requestData;
+    
+    console.log('🔵 Datos recibidos:');
+    console.log('   - Mensaje:', `"${message}"`);
+    console.log('   - UserId:', userId || 'anonymous');
+    console.log('');
+    
+    // ✅ Usar función auxiliar para validar (código más limpio y reutilizable)
+    validateMessage(message);
+    
+    console.log('');
+    
+    // ✅ Generar ID de conversación con función auxiliar
+    const conversationId = generateConversationId(userId);
+    
+    console.log('');
+    
+    // ✅ Crear respuesta con función auxiliar
+    const response = createSimulatedResponse(message, conversationId);
 
-    // Validación básica
-    if (!message || message.trim().length === 0) {
-      throw new Error('El mensaje es requerido');
-    }
-
-    // Aquí iría la lógica real de Gemini
-    /*
-    const prompt = `
-      ${setMobilityContext()}
-      
-      Contexto adicional: ${context || 'Sin contexto específico'}
-      
-      Usuario pregunta: ${message}
-      
-      Responde de manera amigable y útil, enfocándote en soluciones de movilidad sostenible.
-    `;
-
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
-    */
-
-    // Simulación temporal para desarrollo
-    const simulatedResponse: ChatResponse = {
-      response: `Gracias por tu mensaje: "${message}". Como asistente de movilidad sostenible, te recomiendo considerar opciones de transporte ecológico como bicicletas, transporte público eléctrico o caminar cuando sea posible. ¿Te gustaría saber más sobre alguna opción específica?`,
-      timestamp: new Date().toISOString(),
-      conversationId: `conv_${userId || 'anonymous'}_${Date.now()}`,
-    };
-
-    // Aquí podrías guardar la conversación en base de datos
-    // await saveConversation(userId, message, simulatedResponse.response);
-
-    return simulatedResponse;
+    console.log('');
+    console.log('🔵 [ÉXITO] ✅ Proceso completado con código refactorizado');
+    console.log('   - Response:', response.response.substring(0, 50) + '...');
+    console.log('   - ConversationId:', response.conversationId);
+    console.log('   - Timestamp:', response.timestamp);
+    console.log('');
+    
+    // TODO: Aquí integrar con Gemini API real en producción
+    // const geminiResponse = await callGeminiAPI(message, context);
+    
+    return response;
 
   } catch (error) {
-    console.error('Error en sendMessage:', error);
+    console.error('🔵 [CATCH] Error capturado:', error);
+    
+    if (error instanceof Error && error.message === 'El mensaje es requerido') {
+      console.log('🔵 [CORRECTO] ✅ Relanzando error de validación\n');
+      throw error;
+    }
+    
     throw new Error('Error interno del servidor');
   }
 };
 
-/**
- * Obtiene el historial de conversaciones de un usuario
- * Ejemplo para Firebase Functions:
- * 
- * export const getChatHistory = functions.https.onRequest(async (req, res) => {
- *   const { userId } = req.params;
- *   const history = await getChatHistoryService(userId);
- *   res.json(history);
- * });
- */
 export const getChatHistoryService = async (
   userId: string, 
   limit: number = 50
 ): Promise<{ messages: ConversationMessage[]; count: number; userId: string }> => {
   try {
-    // Aquí iría la consulta real a la base de datos
-    /*
-    const history = await db.collection('conversations')
-      .where('userId', '==', userId)
-      .orderBy('timestamp', 'desc')
-      .limit(limit)
-      .get();
+    // Aplicar límite máximo
+    const finalLimit = Math.min(limit, 50);
     
-    const messages = history.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as ConversationMessage[];
-    */
-
-    // Simulación temporal
     const mockHistory: ConversationMessage[] = [];
-
+    
     return {
-      messages: mockHistory,
+      messages: mockHistory.slice(0, finalLimit),
       count: mockHistory.length,
       userId
     };
-
   } catch (error) {
     console.error('Error en getChatHistory:', error);
     throw new Error('Error obteniendo historial');
   }
 };
 
-/**
- * Función auxiliar para guardar conversaciones (comentada para desarrollo)
- */
-/*
-const saveConversation = async (
-  userId: string | undefined,
-  userMessage: string,
-  botResponse: string
-): Promise<void> => {
-  try {
-    const conversation = {
-      userId: userId || 'anonymous',
-      userMessage,
-      botResponse,
-      timestamp: new Date().toISOString(),
-      type: 'gemini_chat'
-    };
+export const setMobilityContext = (): string => {
+  return `Eres un asistente especializado en movilidad sostenible para estudiantes de la Universidad César Vallejo (UCV) en Lima Norte, Perú.`;
+};
 
-    // Guardar en Firestore o tu base de datos preferida
-    // await db.collection('conversations').add(conversation);
+// 🧪 SUITE COMPLETA DE PRUEBAS - FASE REFACTOR
+console.log('\n\n🧪 ═══════════════════════════════════════════════════════');
+console.log('🧪 EJECUTANDO SUITE COMPLETA DE PRUEBAS - FASE REFACTOR');
+console.log('🧪 ═══════════════════════════════════════════════════════\n');
+
+// TEST 1: Mensaje vacío
+console.log('📝 TEST 1: Mensaje vacío (debe rechazar)');
+sendMessage({ message: '', userId: 'user123' })
+  .then(() => {
+    console.log('\n❌ FALLO: No debería aceptar mensaje vacío\n');
+  })
+  .catch(error => {
+    console.log('\n✅ ÉXITO: Rechazó correctamente mensaje vacío');
+    console.log('   Error capturado:', error.message);
+    console.log('');
+  });
+
+// TEST 2: Mensaje con espacios
+setTimeout(() => {
+  console.log('📝 TEST 2: Mensaje con solo espacios (debe rechazar)');
+  sendMessage({ message: '    ', userId: 'user456' })
+    .then(() => {
+      console.log('\n❌ FALLO: No debería aceptar solo espacios\n');
+    })
+    .catch(error => {
+      console.log('\n✅ ÉXITO: Rechazó correctamente mensaje con espacios');
+      console.log('   Error capturado:', error.message);
+      console.log('');
+    });
+}, 500);
+
+// TEST 3: Mensaje válido con userId
+setTimeout(() => {
+  console.log('📝 TEST 3: Mensaje válido con userId (debe procesar)');
+  sendMessage({ message: '¿Cómo llego a la UCV en bici?', userId: 'user789' })
+    .then(response => {
+      console.log('\n✅ ÉXITO: Procesó correctamente mensaje válido');
+      console.log('   ConversationId:', response.conversationId);
+      console.log('   Contiene userId "user789":', response.conversationId.includes('user789'));
+      console.log('');
+    })
+    .catch(error => {
+      console.log('\n❌ FALLO: No debería rechazar mensaje válido');
+      console.log('   Error:', error.message);
+      console.log('');
+    });
+}, 1000);
+
+// TEST 4: Usuario anónimo
+setTimeout(() => {
+  console.log('📝 TEST 4: Usuario anónimo (debe procesar)');
+  sendMessage({ message: '¿Opciones de transporte público?' })
+    .then(response => {
+      console.log('\n✅ ÉXITO: Procesó usuario anónimo correctamente');
+      console.log('   ConversationId:', response.conversationId);
+      console.log('   Contiene "anonymous":', response.conversationId.includes('anonymous'));
+      console.log('');
+    })
+    .catch(error => {
+      console.log('\n❌ FALLO: No debería rechazar usuario anónimo');
+      console.log('   Error:', error.message);
+      console.log('');
+    });
+}, 1500);
+
+// TEST 5: Mensaje largo
+setTimeout(() => {
+  console.log('📝 TEST 5: Mensaje largo (debe procesar)');
+  sendMessage({ 
+    message: '¿Cuáles son las mejores rutas en bicicleta desde Los Olivos hasta la UCV considerando seguridad y ciclovías disponibles?',
+    userId: 'user999'
+  })
+    .then(response => {
+      console.log('\n✅ ÉXITO: Procesó mensaje largo correctamente');
+      console.log('   ConversationId:', response.conversationId);
+      console.log('   Timestamp válido:', response.timestamp.length > 0);
+      console.log('');
+    })
+    .catch(error => {
+      console.log('\n❌ FALLO: No debería rechazar mensaje largo');
+      console.log('   Error:', error.message);
+      console.log('');
+    });
+}, 2000);
+
+// TEST 6: Verificar que todas las funciones auxiliares funcionan
+setTimeout(() => {
+  console.log('📝 TEST 6: Verificar funciones auxiliares');
+  
+  try {
+    // Probar validateMessage
+    validateMessage('Mensaje de prueba');
+    console.log('   ✅ validateMessage funciona');
+    
+    // Probar generateConversationId
+    const id1 = generateConversationId('testUser');
+    const id2 = generateConversationId();
+    console.log('   ✅ generateConversationId funciona');
+    console.log('      - Con userId:', id1.includes('testUser'));
+    console.log('      - Sin userId (anónimo):', id2.includes('anonymous'));
+    
+    // Probar createSimulatedResponse
+    const testResponse = createSimulatedResponse('Test', 'conv_test_123');
+    console.log('   ✅ createSimulatedResponse funciona');
+    console.log('      - Tiene respuesta:', testResponse.response.length > 0);
+    console.log('      - Tiene timestamp:', testResponse.timestamp.length > 0);
+    console.log('');
     
   } catch (error) {
-    console.error('Error guardando conversación:', error);
+    console.log('   ❌ Error en funciones auxiliares:', error);
   }
-};
-*/
+}, 2500);
 
-/**
- * Configura el contexto especializado para movilidad sostenible
- */
-export const setMobilityContext = (): string => {
-  return `
-    Contexto especializado: Eres un asistente virtual de movilidad sostenible para la Universidad César Vallejo (UCV) en Lima, Perú.
-    
-    Tu especialidad es ayudar a estudiantes universitarios con:
-    
-    🎓 INFORMACIÓN UNIVERSITARIA:
-    - Universidad César Vallejo (UCV) ubicada en Lima Norte
-    - Campus principal en Lima Norte (Los Olivos/San Martín de Porres)
-    - Horarios académicos típicos: 7:00 AM - 10:00 PM
-    - Mayor afluencia: 7-9 AM y 5-7 PM
-    
-    🚗 RUTAS Y UBICACIÓN:
-    - Principales avenidas: Av. Alfredo Mendiola, Av. Venezuela, Av. Túpac Amaru
-    - Estaciones del Metropolitano cercanas: Naranjal, Universitaria, Angamos
-    - Ciclovías disponibles en la zona
-    - Rutas seguras para estudiantes
-    
-    🌱 MOVILIDAD SOSTENIBLE:
-    - Bicicletas urbanas y ciclovías de Lima Norte
-    - Transporte público (Metropolitano, buses urbanos)
-    - Carpooling entre estudiantes
-    - Caminar como opción saludable y económica
-    - Reducción de huella de carbono
-    
-    🌤️ INFORMACIÓN CONTEXTUAL:
-    - Clima de Lima (subtropical desértico)
-    - Estaciones: Verano (dic-abr), Invierno (may-nov)
-    - Tráfico en horas pico
-    - Seguridad en el transporte
-    
-    🎉 EVENTOS UNIVERSITARIOS:
-    - Semanas culturales y deportivas
-    - Exámenes y fechas importantes
-    - Actividades extracurriculares
-    
-    PERSONALIDAD:
-    - Amigable y cercano con estudiantes
-    - Usa emojis para hacer la conversación más dinámica
-    - Proporciona información práctica y útil
-    - Siempre recomienda opciones sostenibles
-    - Conoce la realidad de estudiantes universitarios (presupuesto limitado, horarios complicados)
-    
-    Siempre prioriza opciones sostenibles, seguras y económicas para estudiantes universitarios.
-  `;
-};
-
-/**
- * Ejemplo de configuración para Firebase Functions index.ts:
- * 
- * import { sendMessage, getChatHistoryService } from './chatbot/geminiController';
- * 
- * export const chatbotMessage = functions.https.onRequest(async (req, res) => {
- *   try {
- *     const response = await sendMessage(req.body);
- *     res.status(200).json(response);
- *   } catch (error) {
- *     res.status(500).json({ error: error.message });
- *   }
- * });
- * 
- * export const chatbotHistory = functions.https.onRequest(async (req, res) => {
- *   try {
- *     const { userId } = req.params;
- *     const history = await getChatHistoryService(userId);
- *     res.status(200).json(history);
- *   } catch (error) {
- *     res.status(500).json({ error: error.message });
- *   }
- * });
- */
+setTimeout(() => {
+  console.log('\n═══════════════════════════════════════════════════════');
+  console.log('✅ SUITE DE PRUEBAS COMPLETADA - FASE REFACTOR');
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('\n📊 MEJORAS IMPLEMENTADAS:');
+  console.log('   ✅ Código modular con funciones auxiliares');
+  console.log('   ✅ Mejor organización y legibilidad');
+  console.log('   ✅ Funciones reutilizables');
+  console.log('   ✅ Más fácil de mantener y testear');
+  console.log('   ✅ Separación de responsabilidades');
+  console.log('\n🎯 RESULTADO TDD:');
+  console.log('   🔴 ROJO    → Escribimos la prueba que falla');
+  console.log('   🟢 VERDE   → Código mínimo que funciona');
+  console.log('   🔵 REFACTOR → Código mejorado y limpio');
+  console.log('');
+}, 3000);
