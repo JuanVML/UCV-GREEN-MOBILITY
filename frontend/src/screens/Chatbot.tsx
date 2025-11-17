@@ -37,6 +37,7 @@ export default function ChatbotScreen() {
     suggestions,
     sendMessage,
     selectSuggestion,
+    clearSession,
     hasMessages
   } = useChat();
 
@@ -58,6 +59,11 @@ export default function ChatbotScreen() {
     navigation.goBack();
   };
 
+  // Función para limpiar el chat
+  const handleClearChat = () => {
+    clearSession();
+  };
+
   // Función para manejar selección de sugerencia
   const handleSuggestionSelect = (suggestion: any) => {
     selectSuggestion(suggestion);
@@ -66,11 +72,11 @@ export default function ChatbotScreen() {
     }, 100);
   };
 
-  // Animación de fade out para la animación Lottie cuando hay mensajes
+  // Animación de fade out suave para la animación Lottie cuando hay mensajes
   useEffect(() => {
     Animated.timing(animationOpacity, {
-      toValue: hasMessages ? 0.3 : 1,
-      duration: 500,
+      toValue: hasMessages ? 0 : 1,
+      duration: 800,
       useNativeDriver: true,
     }).start();
   }, [hasMessages, animationOpacity]);
@@ -103,22 +109,24 @@ export default function ChatbotScreen() {
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
         
         {/* Header del chatbot - siempre visible */}
-        <ChatHeader onBackPress={handleGoBack} />
+        <ChatHeader 
+          onBackPress={handleGoBack} 
+          onClearChat={handleClearChat}
+          showClearButton={hasMessages}
+        />
 
         {/* Contenedor principal con animación y chat */}
         <View style={styles.container}>
-          {/* Estado inicial: Animación y saludo */}
-          {!hasMessages && (
-            <Animated.View style={[styles.animationContainer, { opacity: animationOpacity }]}>
-              <LottieView
-                source={require('../../assets/lotties/onda.json')} 
-                autoPlay
-                loop
-                style={styles.animation}
-              />
-              <Text style={styles.text}>Hola, ¿en qué puedo ayudarte?</Text>
-            </Animated.View>
-          )}
+          {/* Estado inicial: Animación y saludo - se desvanece suavemente */}
+          <Animated.View style={[styles.animationContainer, { opacity: animationOpacity, pointerEvents: hasMessages ? 'none' : 'auto' }]}>
+            <LottieView
+              source={require('../../assets/lotties/onda.json')} 
+              autoPlay
+              loop
+              style={styles.animation}
+            />
+            <Text style={styles.text}>Hola, ¿en qué puedo ayudarte?</Text>
+          </Animated.View>
 
           {/* Estado de conversación: Lista de mensajes */}
           {hasMessages && (
@@ -192,7 +200,11 @@ const styles = StyleSheet.create({
     paddingBottom: 90, // Reducido: menos espacio para input y sugerencias
   },
   animationContainer: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
     paddingBottom: 80,
@@ -214,8 +226,11 @@ const styles = StyleSheet.create({
   },
   // Estilos para el contenedor de chat
   chatContainer: {
-    flex: 1,
-    width: '100%',
+    position: 'absolute',
+    top: 100,
+    left: 0,
+    right: 0,
+    bottom: 90,
     paddingHorizontal: 4,
   },
   messagesList: {
@@ -236,7 +251,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
     paddingTop: 10,
-    zIndex: 100,
+    zIndex: 1000,
+    elevation: 10,
   },
   inputWrapper: {
     flexDirection: 'row',

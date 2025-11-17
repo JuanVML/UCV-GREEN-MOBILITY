@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChatMessage, SuggestionBubble, ChatSession } from '../types/chatbot';
-import { sendMessageToGemini } from '../api/gemini';
+import { sendMessage as sendMessageToBackend, ChatError } from '../api/chatbot';
 import { useAuth } from './useAuth';
 
 // Sugerencias predefinidas para UCV SEDE LIMA NORTE (máximo 3)
@@ -72,15 +72,18 @@ export const useChat = () => {
     setIsLoading(true);
 
     try {
-      // Crear contexto de la conversación para Gemini
+      // Crear contexto de la conversación (solo historial, sin duplicar contexto UCV)
+      // El backend ya tiene el contexto completo de UCV en constants.ts
       const conversationContext = messages
+        .slice(-5) // Solo últimos 5 mensajes para optimizar
         .map(msg => `${msg.isUser ? 'Usuario' : 'Asistente'}: ${msg.message}`)
         .join('\n');
 
-      const response = await sendMessageToGemini(
+      // Llamar al backend centralizado
+      const response = await sendMessageToBackend(
         messageText,
         user.email,
-        `Conversación previa:\n${conversationContext}\n\nContexto: Eres un asistente de movilidad universitaria para la Universidad César Vallejo (UCV). Ayudas con rutas seguras, transporte sostenible, clima, tráfico y eventos universitarios.`
+        conversationContext // ✅ Solo historial, sin contexto duplicado
       );
 
       const botMessage: ChatMessage = {
@@ -92,9 +95,32 @@ export const useChat = () => {
 
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
+      // Debug: Log del error completo
+      console.error('❌ Error completo en useChat:', error);
+      console.error('Tipo de error:', error?.constructor?.name);
+      console.error('Código:', (error as any)?.code);
+      console.error('Mensaje:', (error as any)?.message);
+      
+      // Manejo de errores mejorado
+      let errorText = 'Lo siento, ha ocurrido un error. Por favor intenta nuevamente.';
+      
+      if (error instanceof ChatError) {
+        switch (error.code) {
+          case 'TIMEOUT':
+            errorText = 'La petición tardó demasiado. Verifica tu conexión e intenta nuevamente.';
+            break;
+          case 'NETWORK_ERROR':
+            errorText = 'Sin conexión a internet. Verifica tu red e intenta nuevamente.';
+            break;
+          case 'BACKEND_ERROR':
+            errorText = 'Error del servidor. Intenta nuevamente en unos momentos.';
+            break;
+        }
+      }
+      
       const errorMessage: ChatMessage = {
         id: `msg_${Date.now()}_error`,
-        message: 'Lo siento, ha ocurrido un error. Por favor intenta nuevamente.',
+        message: errorText,
         isUser: false,
         timestamp: new Date(),
       };
