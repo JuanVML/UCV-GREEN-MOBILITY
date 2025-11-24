@@ -47,7 +47,7 @@ class TeamService {
             title: 'Ruta Av. Universitaria - UCV',
             users: 5,
             time: '6:30 AM',
-            maxUsers: 8,
+            maxUsers: 30,
             description: 'Ruta diaria compartida por Av. Universitaria hasta la UCV. Pasamos por principales paraderos y estaciones.',
             meetingPoint: 'Estación Metropolitano - Naranjal',
             createdBy: 'Carlos Mendoza',

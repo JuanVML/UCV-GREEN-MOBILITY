@@ -264,7 +264,7 @@ Para darte la ruta exacta necesito:
   }
 
   // Respuestas sobre eventos universitarios
-  if (lowerMessage.includes('evento') || lowerMessage.includes('actividad') || lowerMessage.includes('semana')) {
+  if (lowerMessage.includes('evento's) || lowerMessage.includes('actividad') || lowerMessage.includes('semana')) {
     return `🎓 **Eventos Universitarios:**
 
 🕐 **¿A qué hora es el evento?**

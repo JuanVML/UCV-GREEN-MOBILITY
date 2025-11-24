@@ -8,87 +8,74 @@ interface RouteCardProps {
   users: number;
   maxUsers?: number;
   time: string;
+  description?: string;
+  createdBy?: string;
   onJoin: () => void;
   onDetails: () => void;
   isLoading?: boolean;
   isNew?: boolean;
 }
 
-export default function RouteCard({ title, users, maxUsers, time, onJoin, onDetails, isLoading = false, isNew = false }: RouteCardProps) {
+export default function RouteCard({ title, users, maxUsers, time, description, createdBy, onJoin, onDetails, isLoading = false, isNew = false }: RouteCardProps) {
   const availableSpots = maxUsers ? maxUsers - users : null;
   const isFullRoute = availableSpots !== null && availableSpots <= 0;
 
+  const initials = createdBy ? createdBy.split(' ').map(s => s[0]).join('').slice(0,2).toUpperCase() : 'UC';
+
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[styles.container, isNew && styles.containerNew]}
       onPress={onDetails}
-      activeOpacity={0.7}
+      activeOpacity={0.85}
     >
       {isNew && (
         <View style={styles.newBadge}>
           <Text style={styles.newBadgeText}>NUEVO</Text>
         </View>
       )}
-      <View style={styles.routeInfo}>
-        <View style={styles.titleContainer}>
-          <Ionicons name="location" size={16} color={lightTheme.primary} />
-          <Text style={styles.routeTitle}>{title}</Text>
-        </View>
-        <View style={styles.detailsContainer}>
-          <View style={styles.detail}>
-            <Ionicons name="people" size={14} color="#666666" />
-            <Text style={styles.detailText}>
-              {maxUsers ? `${users}/${maxUsers}` : `${users} Usuarios`}
-            </Text>
+      <View style={styles.accentBar} />
+      <View style={styles.cardBody}>
+        <View style={styles.headerRow}>
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarText}>{initials}</Text>
           </View>
-          <View style={styles.detail}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.routeTitle}>{title}</Text>
+            {description ? <Text style={styles.description} numberOfLines={2}>{description}</Text> : null}
+          </View>
+        </View>
+
+        <View style={styles.detailsContainerRow}>
+          <View style={styles.detailRow}>
+            <Ionicons name="people" size={14} color="#666666" />
+            <Text style={styles.detailText}>{maxUsers ? `${users}/${maxUsers}` : `${users} Usuarios`}</Text>
+          </View>
+          <View style={styles.detailRow}>
             <Ionicons name="time" size={14} color="#666666" />
             <Text style={styles.detailText}>{time}</Text>
           </View>
         </View>
-        {availableSpots !== null && (
-          <View style={styles.availabilityContainer}>
-            <Ionicons 
-              name={isFullRoute ? "close-circle" : "checkmark-circle"} 
-              size={12} 
-              color={isFullRoute ? "#F44336" : "#4CAF50"} 
-            />
-            <Text style={[
-              styles.availabilityText, 
-              isFullRoute ? styles.availabilityTextFull : styles.availabilityTextAvailable
-            ]}>
-              {isFullRoute ? 'Completo' : `${availableSpots} cupos`}
-            </Text>
-          </View>
-        )}
+
+        <TouchableOpacity
+          style={[(isLoading || isFullRoute) ? styles.joinButtonDisabled : styles.joinButton]}
+          onPress={(e) => { e.stopPropagation(); onJoin(); }}
+          activeOpacity={0.8}
+          disabled={isLoading || isFullRoute}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.joinButtonText}>{isFullRoute ? 'Completo' : 'Unirme'}</Text>
+          )}
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={[
-          styles.joinButton, 
-          (isLoading || isFullRoute) && styles.joinButtonDisabled
-        ]}
-        onPress={(e) => {
-          e.stopPropagation();
-          onJoin();
-        }}
-        activeOpacity={0.8}
-        disabled={isLoading || isFullRoute}
-      >
-        {isLoading ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : (
-          <Text style={styles.joinButtonText}>
-            {isFullRoute ? 'Completo' : 'Unirme'}
-          </Text>
-        )}
-      </TouchableOpacity>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#ffffff',
     borderRadius: 15,
     padding: 20,
     marginBottom: 15,
@@ -108,7 +95,7 @@ const styles = StyleSheet.create({
   containerNew: {
     borderWidth: 2,
     borderColor: '#4CAF50',
-    backgroundColor: 'rgba(76, 175, 80, 0.05)',
+    backgroundColor: 'rgba(76, 175, 80, 0.06)',
   },
   newBadge: {
     position: 'absolute',
@@ -128,6 +115,53 @@ const styles = StyleSheet.create({
   routeInfo: {
     flex: 1,
     marginRight: 15,
+  },
+  gradientInner: {
+    display: 'none',
+  },
+  accentBar: {
+    width: 8,
+    height: '100%',
+    backgroundColor: lightTheme.primary,
+    borderRadius: 6,
+    marginRight: 12,
+  },
+  cardBody: {
+    flex: 1,
+    paddingLeft: 8,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  avatarCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#E6F5EF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: lightTheme.primary,
+    fontWeight: '700',
+  },
+  description: {
+    color: '#666',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  detailsContainerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   titleContainer: {
     flexDirection: 'row',
@@ -157,12 +191,18 @@ const styles = StyleSheet.create({
   },
   joinButton: {
     backgroundColor: lightTheme.primary,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 20,
+    alignSelf: 'flex-end',
   },
   joinButtonDisabled: {
-    opacity: 0.6,
+    backgroundColor: '#999',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    alignSelf: 'flex-end',
+    opacity: 0.8,
   },
   joinButtonText: {
     color: '#FFFFFF',

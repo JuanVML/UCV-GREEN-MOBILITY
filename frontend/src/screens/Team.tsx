@@ -5,13 +5,14 @@ import {
   StyleSheet,
   SafeAreaView,
   FlatList,
+  RefreshControl,
   TouchableOpacity,
   StatusBar,
   Modal,
-  ImageBackground,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '../hooks/useNavigation';
 import { useTeam, Route } from '../hooks/useTeam';
 import { lightTheme } from '../theme/colors';
@@ -21,16 +22,14 @@ import RouteDetailsModal, { RouteDetails } from '../components/RouteDetailsModal
 
 export default function TeamScreen() {
   const navigation = useNavigation();
-  const { routes, isLoading, isJoining, isCreating, joinRoute, createGroup, getRouteDetails } = useTeam();
+  const { routes, isLoading, isJoining, isCreating, joinRoute, createGroup, getRouteDetails, refreshRoutes } = useTeam();
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<string>('');
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [selectedRouteDetails, setSelectedRouteDetails] = useState<RouteDetails | null>(null);
 
-  const handleGoBack = () => {
-    navigation.goBack();
-  };
+  const handleGoBack = () => navigation.goBack();
 
   const handleJoinRoute = async (routeTitle: string, routeId: string) => {
     const success = await joinRoute(routeId);
@@ -40,9 +39,7 @@ export default function TeamScreen() {
     }
   };
 
-  const handleCreateGroup = () => {
-    setCreateModalVisible(true);
-  };
+  const handleCreateGroup = () => setCreateModalVisible(true);
 
   const handleShowRouteDetails = async (routeId: string) => {
     const details = await getRouteDetails(routeId);
@@ -71,11 +68,8 @@ export default function TeamScreen() {
       departureTime: groupData.departureTime,
       meetingPoint: groupData.meetingPoint,
     });
-    
-    if (success) {
-      console.log(`Grupo "${groupData.title}" creado exitosamente!`);
-    }
-    
+
+    if (success) console.log(`Grupo "${groupData.title}" creado exitosamente!`);
     return success;
   };
 
@@ -84,6 +78,8 @@ export default function TeamScreen() {
       title={item.title}
       users={item.users}
       maxUsers={item.maxUsers}
+      description={item.description}
+      createdBy={item.createdBy}
       time={item.time}
       onJoin={() => handleJoinRoute(item.title, item.id)}
       onDetails={() => handleShowRouteDetails(item.id)}
@@ -93,24 +89,24 @@ export default function TeamScreen() {
   );
 
   return (
-    <ImageBackground 
-      source={require('../../assets/images/fondo3.png')} 
+    <LinearGradient
+      colors={['#0A4732', '#1F7A5C', '#32A88B']}
       style={styles.background}
-      resizeMode="cover"
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
     >
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-        
+
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleGoBack}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={handleGoBack} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Team</Text>
+          <TouchableOpacity style={styles.refreshButton} onPress={refreshRoutes} activeOpacity={0.7}>
+            <Ionicons name="refresh" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
 
         {/* Routes List */}
@@ -128,6 +124,9 @@ export default function TeamScreen() {
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.routesList}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                  <RefreshControl refreshing={isLoading} onRefresh={refreshRoutes} tintColor="#fff" />
+                }
               />
 
               {/* Create Group Button */}
@@ -160,12 +159,7 @@ export default function TeamScreen() {
         />
 
         {/* Join Confirmation Modal */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
+        <Modal animationType="slide" transparent visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalIcon}>
@@ -174,19 +168,15 @@ export default function TeamScreen() {
               <Text style={styles.modalTitle}>Te has unido al grupo</Text>
               <Text style={styles.modalSubtitle}>{selectedRoute}</Text>
               <Text style={styles.modalTime}>(6:00 AM)</Text>
-              
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setModalVisible(false)}
-                activeOpacity={0.8}
-              >
+
+              <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)} activeOpacity={0.8}>
                 <Text style={styles.modalButtonText}>OK</Text>
               </TouchableOpacity>
             </View>
           </View>
         </Modal>
       </SafeAreaView>
-    </ImageBackground>
+    </LinearGradient>
   );
 }
 
@@ -195,6 +185,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
+    justifyContent: 'flex-start',
   },
   container: {
     flex: 1,
@@ -219,10 +210,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit-Medium',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginRight: 40, // Compensar el botón de atrás
+    marginRight: 40,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+  },
+  refreshButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    right: 10,
   },
   content: {
     flex: 1,
@@ -246,7 +245,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   createGroupButton: {
-    backgroundColor: 'rgba(114, 166, 151, 0.8)',
+    backgroundColor: 'rgba(24, 115, 89, 0.9)',
     borderRadius: 25,
     paddingVertical: 15,
     alignItems: 'center',
@@ -258,7 +257,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Outfit-Medium',
   },
-  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -271,13 +269,6 @@ const styles = StyleSheet.create({
     padding: 30,
     alignItems: 'center',
     marginHorizontal: 40,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
     elevation: 5,
   },
   modalIcon: {

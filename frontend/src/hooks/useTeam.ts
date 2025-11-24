@@ -7,6 +7,8 @@ export interface Route {
   users: number;
   time: string;
   maxUsers?: number;
+  description?: string;
+  createdBy?: string;
   isNew?: boolean;
 }
 
@@ -32,6 +34,8 @@ export function useTeam() {
         users: route.users,
         time: route.time,
         maxUsers: route.maxUsers,
+        description: route.description,
+        createdBy: route.createdBy,
       }));
       setRoutes(convertedRoutes);
     } catch (error) {
