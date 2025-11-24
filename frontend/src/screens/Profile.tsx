@@ -14,7 +14,10 @@ export default function Profile() {
       </TouchableOpacity>
 
       {/* 🔹 Avatar */}
-      <Image source={require("../../assets/images/avatar.png")} style={styles.avatar} />
+      <Image
+        source={{ uri: "https://avatars.dicebear.com/api/identicon/ucv-user.png" }}
+        style={styles.avatar}
+      />
       <TouchableOpacity>
         <Text style={styles.changeText}>cambiar</Text>
       </TouchableOpacity>

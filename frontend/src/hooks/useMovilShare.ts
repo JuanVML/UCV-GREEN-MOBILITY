@@ -7,7 +7,7 @@ const mockLoans: MovilShareUser[] = [
     id: '1',
     ownerId: 'user1',
     ownerName: 'Fabrizzio Medina',
-    avatar: require('../../assets/images/avatar.png'),
+    avatar: { uri: 'https://avatars.dicebear.com/api/identicon/ucv-user.png' },
     vehicleType: 'bicycle',
     vehicleDescription: 'Bicicleta MTB roja en buen estado',
     campusGate: 'Puerta Principal',
@@ -22,7 +22,7 @@ const mockLoans: MovilShareUser[] = [
     id: '2',
     ownerId: 'user2',
     ownerName: 'Alberth Lopez',
-    avatar: require('../../assets/images/avatar.png'),
+    avatar: { uri: 'https://avatars.dicebear.com/api/identicon/ucv-user.png' },
     vehicleType: 'scooter',
     vehicleDescription: 'Scooter eléctrico negro Xiaomi',
     campusGate: 'Puerta 2',
@@ -36,7 +36,7 @@ const mockLoans: MovilShareUser[] = [
     id: '3',
     ownerId: 'user3',
     ownerName: 'Juan Muños',
-    avatar: require('../../assets/images/avatar.png'),
+    avatar: { uri: 'https://avatars.dicebear.com/api/identicon/ucv-user.png' },
     vehicleType: 'bicycle',
     vehicleDescription: 'Bicicleta de paseo azul',
     campusGate: 'Puerta Principal',
@@ -50,7 +50,7 @@ const mockLoans: MovilShareUser[] = [
     id: '4',
     ownerId: 'user4',
     ownerName: 'Rony Guanachin',
-    avatar: require('../../assets/images/avatar.png'),
+    avatar: { uri: 'https://avatars.dicebear.com/api/identicon/ucv-user.png' },
     vehicleType: 'scooter',
     campusGate: 'Puerta 3',
     returnTime: '5:30 PM',
@@ -72,10 +72,7 @@ export const useMovilShare = () => {
     const loadLoans = async () => {
       try {
         setIsLoading(true);
-        // TODO: Reemplazar con llamada real a la API
-        // const response = await api.getMovilShareLoans();
-        
-        // Simular delay de red
+
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         setLoans(mockLoans);
@@ -92,7 +89,6 @@ export const useMovilShare = () => {
   }, []);
 
   const refreshLoans = async () => {
-    // TODO: Implementar refresh real de datos
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 500));
     setLoans(mockLoans);
@@ -102,29 +98,23 @@ export const useMovilShare = () => {
   const createLoan = async (loanData: CreateLoanRequest): Promise<boolean> => {
     try {
       setIsCreating(true);
-      
-      // TODO: Reemplazar con llamada real a la API
-      // const response = await api.createMovilShareLoan(loanData);
-      
-      // Simular delay de red
+
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Crear nuevo préstamo mock
       const newLoan: MovilShareUser = {
         id: `loan_${Date.now()}`,
         ownerId: 'current_user',
         ownerName: 'Tú',
-        avatar: require('../../assets/images/avatar.png'),
+        avatar: { uri: 'https://avatars.dicebear.com/api/identicon/ucv-user.png' },
         ...loanData,
         status: 'available',
         createdAt: new Date(),
         isNew: true,
       };
-      
-      // Agregar al inicio de la lista
+
       setLoans(prevLoans => [newLoan, ...prevLoans]);
-      
-      // Quitar el indicador "nuevo" después de 5 segundos
+
+      // Quitar marca de nuevo
       setTimeout(() => {
         setLoans(prevLoans =>
           prevLoans.map(loan =>
@@ -145,17 +135,11 @@ export const useMovilShare = () => {
 
   const getLoanDetails = async (loanId: string): Promise<LoanDetails | null> => {
     try {
-      // TODO: Reemplazar con llamada real a la API
-      // const response = await api.getLoanDetails(loanId);
-      
-      // Simular delay de red
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const loan = loans.find(l => l.id === loanId);
-      
       if (!loan) return null;
-      
-      // Agregar datos adicionales para el modal de detalles
+
       const details: LoanDetails = {
         ...loan,
         ownerPhone: '+51 999 888 777',
@@ -172,14 +156,9 @@ export const useMovilShare = () => {
   const requestLoan = async (loanId: string): Promise<boolean> => {
     try {
       setIsRequesting(true);
-      
-      // TODO: Reemplazar con llamada real a la API
-      // const response = await api.requestLoan(loanId);
-      
-      // Simular delay de red
+
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Actualizar el estado del préstamo a "reserved"
       setLoans(prevLoans =>
         prevLoans.map(loan =>
           loan.id === loanId ? { ...loan, status: 'reserved' } : loan
