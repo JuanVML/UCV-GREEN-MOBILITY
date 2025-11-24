@@ -5,13 +5,14 @@ import LottieView from 'lottie-react-native';
 
 interface ChatHeaderProps {
   onBackPress: () => void;
+  onClearChat?: () => void;
+  showClearButton?: boolean;
 }
 
-export default function ChatHeader({ onBackPress }: ChatHeaderProps) {
+export default function ChatHeader({ onBackPress, onClearChat, showClearButton = false }: ChatHeaderProps) {
   return (
     <View style={styles.header}>
       <TouchableOpacity 
-     
         onPress={onBackPress}
         activeOpacity={0.7}
       >
@@ -20,8 +21,17 @@ export default function ChatHeader({ onBackPress }: ChatHeaderProps) {
       
       <View style={styles.titleContainer}>
         <Text style={styles.titleText}>AsistenteMobil</Text>
-
       </View>
+
+      {showClearButton && (
+        <TouchableOpacity 
+          onPress={onClearChat}
+          activeOpacity={0.7}
+          style={styles.clearButton}
+        >
+          <Ionicons name="trash-outline" size={22} color="#FFFFFF" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -45,18 +55,21 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 25, // Más a la derecha: de 15 a 25
+    marginLeft: 25,
     flex: 1,
-    justifyContent: 'flex-start', // Cambiado: alineación al inicio (izquierda)
+    justifyContent: 'flex-start',
   },
   titleText: {
-    fontSize: 20, // Texto más grande
+    fontSize: 20,
     fontFamily: 'Outfit-Medium',
     color: '#FFFFFF',
-    marginRight: 15, // Más espacio entre texto y animación
+    marginRight: 15,
     textShadowColor: 'rgba(0, 0, 0, 0.6)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
-
+  clearButton: {
+    padding: 8,
+    marginLeft: 10,
+  },
 });

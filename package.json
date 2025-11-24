@@ -1,7 +1,7 @@
 {
   "name": "ucvgreenmobility",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "frontend/index.ts",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -30,6 +30,7 @@
     "expo-permissions": "^14.4.0",
     "expo-speech": "~14.0.7",
     "expo-status-bar": "~3.0.8",
+    "express": "^5.1.0",
     "firebase": "^11.10.0",
     "lottie-react-native": "~7.3.1",
     "polyline": "^0.2.0",
@@ -45,10 +46,17 @@
     "react-native-vector-icons": "^10.3.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.3",
     "@types/firebase": "^2.4.32",
     "@types/react": "~19.1.0",
     "@types/react-native": "^0.72.8",
-    "typescript": "~5.9.2"
+    "@wdio/appium-service": "^9.20.0",
+    "@wdio/cli": "^9.20.0",
+    "@wdio/local-runner": "^9.20.0",
+    "@wdio/mocha-framework": "^9.20.0",
+    "@wdio/spec-reporter": "^9.20.0",
+    "typescript": "~5.9.2",
+    "webdriverio": "^9.20.0"
   },
   "private": true
 }

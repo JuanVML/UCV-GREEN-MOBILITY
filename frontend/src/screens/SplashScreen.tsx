@@ -4,8 +4,12 @@ import { View, Text, Image, StyleSheet, Dimensions } from "react-native";
 const SplashScreen = ({ navigation }: any) => {
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.replace("Login");
-    }, 3000); // 2 segundos
+      // Usar reset para asegurarnos de que la pila de navegación queda en Login
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [navigation]);

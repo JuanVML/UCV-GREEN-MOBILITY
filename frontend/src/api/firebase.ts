@@ -3,7 +3,7 @@
  * Compatible con Firestore, Auth y Storage
  */
 
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth, Auth, initializeAuth } from "firebase/auth";
 import { getStorage, FirebaseStorage } from "firebase/storage";
@@ -19,19 +19,46 @@ const firebaseConfig = {
   appId: "1:978357271003:android:5b55b550f0e4c85fcc4ffe",
 };
 
-// 🔧 Inicializa la app solo una vez
-const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+// 🔧 Inicializa la app solo una vez y evita re-inicializaciones con config distinta
+let app;
+const existingApps = getApps();
+if (existingApps.length) {
+  // usar la app existente
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  const existingApp = getApp();
+  // comparar opciones básicas para detectar diferencias de configuración
+  try {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const existingOptions = (existingApp.options || {}) as any;
+    const newOptions = firebaseConfig as any;
+    const same = Object.keys(newOptions).every((k: string) => existingOptions[k] === newOptions[k]);
+    if (!same) {
+      console.warn('⚠️ Firebase: ya existe una app inicializada con opciones diferentes. Usando la instancia existente.');
+    }
+  } catch (e) {
+    // ignore
+  }
+  app = existingApp;
+} else {
+  app = initializeApp(firebaseConfig);
+}
 
 // 🔐 Inicializa Auth
 let auth: Auth;
 try {
-  if (Platform.OS !== "web" && typeof initializeAuth === "function") {
-    auth = initializeAuth(app, { persistence: undefined });
-  } else {
-    auth = getAuth(app);
-  }
-} catch (error) {
-  console.warn("⚠️ Error inicializando Auth, usando fallback getAuth:", error);
+  // Carga dinámica para evitar errores si el paquete RN no está disponible en entornos web
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
+  const rnAuth = require('firebase/auth/react-native');
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  const reactNativePersistence = rnAuth.getReactNativePersistence(AsyncStorage);
+  auth = initializeAuth(app, { persistence: reactNativePersistence });
+} catch (e) {
+  // Fallback: si initializeAuth no está disponible o falla, usar getAuth
+  // (por ejemplo en entornos web o si ya fue inicializado)
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   auth = getAuth(app);
 }
 

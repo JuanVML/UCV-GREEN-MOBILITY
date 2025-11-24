@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 0, // 👈 sin espacio a los lados
     paddingVertical: 4,
-    marginTop: 15,         // bajar la tarjeta del header
+    marginTop: 20,         // bajar la tarjeta del header
     marginBottom: 8,
   },
   sectionTitle: { 

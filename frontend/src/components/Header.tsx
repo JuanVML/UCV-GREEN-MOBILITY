@@ -14,6 +14,7 @@ import { useUser } from "../context/UserContext";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db } from "../api/firebase";
+import { LinearGradient } from "expo-linear-gradient";
 
 type Props = {
   onAvatarPress?: () => void;
@@ -49,8 +50,7 @@ export default function Header({ onAvatarPress }: Props) {
             avatar: firebaseUser.photoURL ?? null,
           });
         }
-      } catch (err) {
-        console.warn("Header: error al obtener perfil", err);
+      } catch {
         setUser({
           name: firebaseUser.displayName ?? "Usuario",
           email: firebaseUser.email ?? "",
@@ -68,7 +68,7 @@ export default function Header({ onAvatarPress }: Props) {
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 1.06,
+          toValue: 1.05,
           duration: 1000,
           useNativeDriver: true,
         }),
@@ -93,7 +93,12 @@ export default function Header({ onAvatarPress }: Props) {
     user?.avatar ?? "https://cdn-icons-png.flaticon.com/512/219/219986.png";
 
   return (
-    <View style={styles.headerContainer}>
+    <LinearGradient
+      colors={["#0E8A52", "#0C6C44", "#07492E"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.headerContainer}
+    >
       <View style={styles.topRow}>
         <Animated.Image
           source={require("../../assets/images/logo.png")}
@@ -116,23 +121,22 @@ export default function Header({ onAvatarPress }: Props) {
           <Text style={styles.dateText}>{formattedDate}</Text>
         </View>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   headerContainer: {
     width: "100%",
-    backgroundColor: "#118245ff",
-    paddingTop: Platform.OS === "ios" ? 50 : 25,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === "ios" ? 52 : 32,
+    paddingBottom: 26,
     paddingHorizontal: 24,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    borderBottomLeftRadius: 26,
+    borderBottomRightRadius: 26,
     shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 8,
   },
   topRow: {
     flexDirection: "row",
@@ -140,57 +144,55 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logo: {
-    width: 230,
-    height: 120,
+    width: 220,
+    height: 110,
     resizeMode: "contain",
-    marginLeft: -20,
-    marginTop: 12,
   },
   avatarWrap: {
     borderWidth: 2,
-    borderColor: "#A5D6A7",
-    padding: 3,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(255,255,255,0.45)",
+    padding: 4,
+    borderRadius: 55,
+    backgroundColor: "rgba(255,255,255,0.25)",
+    backdropFilter: "blur(14px)", // efecto cristal
     shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 5,
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
   },
   subtitle: {
     fontFamily: fonts.text,
-    fontSize: 14,
-    color: "#E8F5E9",
-    marginBottom: 4,
-    marginTop: -2,
+    fontSize: 15,
+    color: "#DFFFEA",
+    marginTop: 2,
+    marginBottom: 6,
+    opacity: 0.95,
   },
   greetingRow: {
-    marginTop: 8,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   greeting: {
     fontFamily: fonts.title,
-    fontSize: 18,
+    fontSize: 22,
+    fontWeight: "600",
     color: "#FFFFFF",
   },
   datePill: {
-    backgroundColor: "#388E3C",
-    borderRadius: 12,
-    paddingVertical: 3,
-    paddingHorizontal: 10,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderRadius: 14,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
   },
   dateText: {
     fontFamily: fonts.text,
-    color: "#E8F5E9",
-    fontSize: 12,
+    color: "#F1FFF5",
+    fontSize: 13,
   },
 });

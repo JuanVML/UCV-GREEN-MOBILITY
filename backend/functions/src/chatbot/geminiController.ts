@@ -1,266 +1,283 @@
-interface ChatRequest {
-  message: string;
-  userId?: string;
-  context?: string;
-}
+/**
+ * 🚀 Gemini Controller - Backend Centralizado
+ * Controlador para manejar interacciones con Gemini AI API
+ * 
+ * @module chatbot/geminiController
+ * @author UCV Green Mobility Team
+ * @version 2.0.0 - Refactorizado con mejores prácticas
+ */
 
-interface ChatResponse {
-  response: string;
-  timestamp: string;
-  conversationId: string;
-}
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { 
+  ChatRequest, 
+  ChatResponse, 
+  ChatHistory,
+  ChatError,
+  ErrorCode 
+} from './types';
+import { MESSAGE_CONSTRAINTS, UCV_MOBILITY_CONTEXT } from './constants';
+import { config, validateConfig } from './config';
+import { saveChatLog, ChatLog } from './loggingService';
 
-interface ConversationMessage {
-  role: string;
-  content: string;
-  timestamp: string;
+// Inicializar Gemini AI
+let genAI: GoogleGenerativeAI | null = null;
+let model: any = null;
+
+/**
+ * Inicializa la conexión con Gemini AI
+ */
+function initializeGemini(): void {
+  if (genAI && model) return; // Ya inicializado
+  
+  try {
+    validateConfig();
+    genAI = new GoogleGenerativeAI(config.gemini.apiKey);
+    model = genAI.getGenerativeModel({ 
+      model: config.gemini.model,
+      generationConfig: {
+        temperature: config.gemini.temperature,
+        topK: config.gemini.topK,
+        topP: config.gemini.topP,
+        maxOutputTokens: config.gemini.maxOutputTokens,
+      }
+    });
+    
+    if (config.logging.enabled) {
+      console.log('✅ Gemini AI inicializado correctamente');
+    }
+  } catch (error) {
+    console.error('❌ Error inicializando Gemini AI:', error);
+    throw new ChatError(
+      ErrorCode.API_ERROR,
+      'Error al inicializar servicio de chat',
+      error
+    );
+  }
 }
 
 /**
- * 🔵 FASE REFACTOR - CÓDIGO MEJORADO Y LIMPIO
- * Mejora: Funciones auxiliares para mejor organización y mantenibilidad
+ * Valida el mensaje del usuario
  */
-
-// 🔧 Función auxiliar para validar mensaje
-const validateMessage = (message: string): void => {
-  console.log('🔵 [HELPER] Ejecutando validación de mensaje...');
-  
+function validateMessage(message: string): void {
   if (!message || message.trim().length === 0) {
-    console.log('🔵 [VALIDACIÓN] ❌ Mensaje inválido detectado');
-    throw new Error('El mensaje es requerido');
+    throw new ChatError(
+      ErrorCode.INVALID_MESSAGE,
+      'El mensaje es requerido y no puede estar vacío'
+    );
   }
   
-  console.log('🔵 [VALIDACIÓN] ✅ Mensaje válido');
-};
+  if (message.length > MESSAGE_CONSTRAINTS.MAX_LENGTH) {
+    throw new ChatError(
+      ErrorCode.MESSAGE_TOO_LONG,
+      `El mensaje excede el límite de ${MESSAGE_CONSTRAINTS.MAX_LENGTH} caracteres`
+    );
+  }
+}
 
-// 🔧 Función auxiliar para generar ID de conversación
-const generateConversationId = (userId?: string): string => {
-  const userIdPart = userId || 'anonymous';
+/**
+ * Genera un ID único para la conversación
+ */
+function generateConversationId(userId?: string): string {
+  const userPart = userId || 'anonymous';
   const timestamp = Date.now();
-  const conversationId = `conv_${userIdPart}_${timestamp}`;
-  
-  console.log('🔵 [HELPER] ConversationId generado:', conversationId);
-  
-  return conversationId;
-};
+  const random = Math.random().toString(36).substring(2, 9);
+  return `conv_${userPart}_${timestamp}_${random}`;
+}
 
-// 🔧 Función auxiliar para crear respuesta simulada
-const createSimulatedResponse = (message: string, conversationId: string): ChatResponse => {
-  console.log('🔵 [HELPER] Generando respuesta simulada...');
+/**
+ * Construye el prompt completo con contexto
+ */
+function buildPrompt(message: string, conversationHistory?: string): string {
+  const contextParts = [UCV_MOBILITY_CONTEXT];
   
-  const response: ChatResponse = {
-    response: `Gracias por tu mensaje: "${message}". Como asistente de movilidad sostenible, te recomiendo considerar opciones de transporte ecológico como bicicletas, transporte público eléctrico o caminar cuando sea posible. ¿Te gustaría saber más sobre alguna opción específica?`,
-    timestamp: new Date().toISOString(),
-    conversationId,
-  };
+  // Solo agregar historial si existe (sin duplicar contexto)
+  if (conversationHistory && conversationHistory.trim()) {
+    contextParts.push('\nCONVERSACIÓN PREVIA:', conversationHistory);
+  }
   
-  console.log('🔵 [HELPER] Respuesta creada exitosamente');
+  contextParts.push('\nUSUARIO:', message);
   
-  return response;
-};
+  return contextParts.join('\n');
+}
 
-export const sendMessage = async (requestData: any): Promise<ChatResponse> => {
+/**
+ * Envía un mensaje al chatbot y obtiene respuesta
+ * 
+ * @param requestData - Datos de la petición (mensaje, userId, contexto)
+ * @returns Respuesta del chatbot
+ */
+export async function sendMessage(requestData: ChatRequest): Promise<ChatResponse> {
+  const startTime = Date.now();
+  
   try {
-    console.log('\n🔵 ═══════════════════════════════════════');
-    console.log('🔵 FASE REFACTOR - Iniciando sendMessage...');
-    console.log('🔵 [MEJORA] Usando funciones auxiliares para código más limpio');
-    console.log('🔵 ═══════════════════════════════════════');
+    // Validar entrada
+    validateMessage(requestData.message);
     
-    const { message, userId, context }: ChatRequest = requestData;
+    // Inicializar Gemini si es necesario
+    initializeGemini();
     
-    console.log('🔵 Datos recibidos:');
-    console.log('   - Mensaje:', `"${message}"`);
-    console.log('   - UserId:', userId || 'anonymous');
-    console.log('');
+    if (!model) {
+      throw new ChatError(
+        ErrorCode.API_ERROR,
+        'Servicio de chat no disponible'
+      );
+    }
     
-    // ✅ Usar función auxiliar para validar (código más limpio y reutilizable)
-    validateMessage(message);
+    // Generar ID de conversación
+    const conversationId = generateConversationId(requestData.userId);
     
-    console.log('');
+    // Construir prompt
+    const fullPrompt = buildPrompt(requestData.message, requestData.context);
     
-    // ✅ Generar ID de conversación con función auxiliar
-    const conversationId = generateConversationId(userId);
+    if (config.logging.verbose) {
+      console.log('� Enviando mensaje a Gemini:', {
+        userId: requestData.userId || 'anonymous',
+        messageLength: requestData.message.length,
+        conversationId
+      });
+    }
     
-    console.log('');
+    // Llamar a Gemini API
+    const result = await model.generateContent(fullPrompt);
+    const response = await result.response;
+    const text = response.text();
     
-    // ✅ Crear respuesta con función auxiliar
-    const response = createSimulatedResponse(message, conversationId);
-
-    console.log('');
-    console.log('🔵 [ÉXITO] ✅ Proceso completado con código refactorizado');
-    console.log('   - Response:', response.response.substring(0, 50) + '...');
-    console.log('   - ConversationId:', response.conversationId);
-    console.log('   - Timestamp:', response.timestamp);
-    console.log('');
+    const chatResponse: ChatResponse = {
+      response: text,
+      timestamp: new Date().toISOString(),
+      conversationId
+    };
     
-    // TODO: Aquí integrar con Gemini API real en producción
-    // const geminiResponse = await callGeminiAPI(message, context);
+    const duration = Date.now() - startTime;
     
-    return response;
-
+    if (config.logging.enabled) {
+      console.log(`✅ Respuesta generada en ${duration}ms`);
+    }
+    
+    // 📝 Guardar log de conversación exitosa
+    try {
+      await saveChatLog({
+        conversationId,
+        userId: requestData.userId || 'anonymous',
+        userMessage: requestData.message,
+        botResponse: text,
+        timestamp: chatResponse.timestamp,
+        responseTime: duration,
+        messageLength: requestData.message.length,
+        responseLength: text.length,
+        success: true,
+        context: requestData.context
+      });
+    } catch (logError) {
+      // No fallar si el logging falla, solo registrar el error
+      console.error('⚠️ Error guardando log (no crítico):', logError);
+    }
+    
+    return chatResponse;
+    
   } catch (error) {
-    console.error('🔵 [CATCH] Error capturado:', error);
+    const duration = Date.now() - startTime;
+    console.error(`❌ Error en sendMessage (${duration}ms):`, error);
     
-    if (error instanceof Error && error.message === 'El mensaje es requerido') {
-      console.log('🔵 [CORRECTO] ✅ Relanzando error de validación\n');
+    // Re-lanzar errores de ChatError
+    if (error instanceof ChatError) {
       throw error;
     }
     
-    throw new Error('Error interno del servidor');
+    // Errores de API de Gemini
+    if (error instanceof Error) {
+      if (error.message.includes('API key')) {
+        throw new ChatError(
+          ErrorCode.API_ERROR,
+          'Error de autenticación con el servicio de chat',
+          error
+        );
+      }
+      
+      if (error.message.includes('quota') || error.message.includes('rate limit')) {
+        throw new ChatError(
+          ErrorCode.RATE_LIMIT_EXCEEDED,
+          'Límite de peticiones excedido. Intenta más tarde',
+          error
+        );
+      }
+    }
+    
+    // 📝 Guardar log de error
+    try {
+      await saveChatLog({
+        conversationId: generateConversationId(requestData.userId),
+        userId: requestData.userId || 'anonymous',
+        userMessage: requestData.message,
+        botResponse: '',
+        timestamp: new Date().toISOString(),
+        responseTime: duration,
+        messageLength: requestData.message.length,
+        responseLength: 0,
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        context: requestData.context
+      });
+    } catch (logError) {
+      console.error('⚠️ Error guardando log de error:', logError);
+    }
+    
+    // Error genérico
+    throw new ChatError(
+      ErrorCode.INTERNAL_ERROR,
+      'Error procesando tu mensaje. Intenta nuevamente',
+      error
+    );
   }
-};
+}
 
-export const getChatHistoryService = async (
+/**
+ * Obtiene el historial de conversación de un usuario
+ * 
+ * @param userId - ID del usuario
+ * @param limit - Número máximo de mensajes a retornar
+ * @returns Historial de mensajes
+ */
+export async function getChatHistory(
   userId: string, 
   limit: number = 50
-): Promise<{ messages: ConversationMessage[]; count: number; userId: string }> => {
+): Promise<ChatHistory> {
   try {
     // Aplicar límite máximo
-    const finalLimit = Math.min(limit, 50);
+    const finalLimit = Math.min(limit, 100);
     
-    const mockHistory: ConversationMessage[] = [];
-    
-    return {
-      messages: mockHistory.slice(0, finalLimit),
-      count: mockHistory.length,
+    // TODO: Implementar integración con base de datos (Firestore)
+    // Por ahora retornamos array vacío
+    const mockHistory: ChatHistory = {
+      messages: [],
+      count: 0,
       userId
     };
+    
+    if (config.logging.verbose) {
+      console.log('📜 Obteniendo historial:', { userId, limit: finalLimit });
+    }
+    
+    return mockHistory;
+    
   } catch (error) {
-    console.error('Error en getChatHistory:', error);
-    throw new Error('Error obteniendo historial');
+    console.error('❌ Error en getChatHistory:', error);
+    throw new ChatError(
+      ErrorCode.INTERNAL_ERROR,
+      'Error obteniendo historial de chat',
+      error
+    );
   }
-};
+}
 
-export const setMobilityContext = (): string => {
-  return `Eres un asistente especializado en movilidad sostenible para estudiantes de la Universidad César Vallejo (UCV) en Lima Norte, Perú.`;
-};
-
-// 🧪 SUITE COMPLETA DE PRUEBAS - FASE REFACTOR
-console.log('\n\n🧪 ═══════════════════════════════════════════════════════');
-console.log('🧪 EJECUTANDO SUITE COMPLETA DE PRUEBAS - FASE REFACTOR');
-console.log('🧪 ═══════════════════════════════════════════════════════\n');
-
-// TEST 1: Mensaje vacío
-console.log('📝 TEST 1: Mensaje vacío (debe rechazar)');
-sendMessage({ message: '', userId: 'user123' })
-  .then(() => {
-    console.log('\n❌ FALLO: No debería aceptar mensaje vacío\n');
-  })
-  .catch(error => {
-    console.log('\n✅ ÉXITO: Rechazó correctamente mensaje vacío');
-    console.log('   Error capturado:', error.message);
-    console.log('');
-  });
-
-// TEST 2: Mensaje con espacios
-setTimeout(() => {
-  console.log('📝 TEST 2: Mensaje con solo espacios (debe rechazar)');
-  sendMessage({ message: '    ', userId: 'user456' })
-    .then(() => {
-      console.log('\n❌ FALLO: No debería aceptar solo espacios\n');
-    })
-    .catch(error => {
-      console.log('\n✅ ÉXITO: Rechazó correctamente mensaje con espacios');
-      console.log('   Error capturado:', error.message);
-      console.log('');
-    });
-}, 500);
-
-// TEST 3: Mensaje válido con userId
-setTimeout(() => {
-  console.log('📝 TEST 3: Mensaje válido con userId (debe procesar)');
-  sendMessage({ message: '¿Cómo llego a la UCV en bici?', userId: 'user789' })
-    .then(response => {
-      console.log('\n✅ ÉXITO: Procesó correctamente mensaje válido');
-      console.log('   ConversationId:', response.conversationId);
-      console.log('   Contiene userId "user789":', response.conversationId.includes('user789'));
-      console.log('');
-    })
-    .catch(error => {
-      console.log('\n❌ FALLO: No debería rechazar mensaje válido');
-      console.log('   Error:', error.message);
-      console.log('');
-    });
-}, 1000);
-
-// TEST 4: Usuario anónimo
-setTimeout(() => {
-  console.log('📝 TEST 4: Usuario anónimo (debe procesar)');
-  sendMessage({ message: '¿Opciones de transporte público?' })
-    .then(response => {
-      console.log('\n✅ ÉXITO: Procesó usuario anónimo correctamente');
-      console.log('   ConversationId:', response.conversationId);
-      console.log('   Contiene "anonymous":', response.conversationId.includes('anonymous'));
-      console.log('');
-    })
-    .catch(error => {
-      console.log('\n❌ FALLO: No debería rechazar usuario anónimo');
-      console.log('   Error:', error.message);
-      console.log('');
-    });
-}, 1500);
-
-// TEST 5: Mensaje largo
-setTimeout(() => {
-  console.log('📝 TEST 5: Mensaje largo (debe procesar)');
-  sendMessage({ 
-    message: '¿Cuáles son las mejores rutas en bicicleta desde Los Olivos hasta la UCV considerando seguridad y ciclovías disponibles?',
-    userId: 'user999'
-  })
-    .then(response => {
-      console.log('\n✅ ÉXITO: Procesó mensaje largo correctamente');
-      console.log('   ConversationId:', response.conversationId);
-      console.log('   Timestamp válido:', response.timestamp.length > 0);
-      console.log('');
-    })
-    .catch(error => {
-      console.log('\n❌ FALLO: No debería rechazar mensaje largo');
-      console.log('   Error:', error.message);
-      console.log('');
-    });
-}, 2000);
-
-// TEST 6: Verificar que todas las funciones auxiliares funcionan
-setTimeout(() => {
-  console.log('📝 TEST 6: Verificar funciones auxiliares');
+/**
+ * Limpia recursos y cierra conexiones
+ */
+export function cleanup(): void {
+  genAI = null;
+  model = null;
   
-  try {
-    // Probar validateMessage
-    validateMessage('Mensaje de prueba');
-    console.log('   ✅ validateMessage funciona');
-    
-    // Probar generateConversationId
-    const id1 = generateConversationId('testUser');
-    const id2 = generateConversationId();
-    console.log('   ✅ generateConversationId funciona');
-    console.log('      - Con userId:', id1.includes('testUser'));
-    console.log('      - Sin userId (anónimo):', id2.includes('anonymous'));
-    
-    // Probar createSimulatedResponse
-    const testResponse = createSimulatedResponse('Test', 'conv_test_123');
-    console.log('   ✅ createSimulatedResponse funciona');
-    console.log('      - Tiene respuesta:', testResponse.response.length > 0);
-    console.log('      - Tiene timestamp:', testResponse.timestamp.length > 0);
-    console.log('');
-    
-  } catch (error) {
-    console.log('   ❌ Error en funciones auxiliares:', error);
+  if (config.logging.enabled) {
+    console.log('🧹 Recursos de Gemini limpiados');
   }
-}, 2500);
-
-setTimeout(() => {
-  console.log('\n═══════════════════════════════════════════════════════');
-  console.log('✅ SUITE DE PRUEBAS COMPLETADA - FASE REFACTOR');
-  console.log('═══════════════════════════════════════════════════════');
-  console.log('\n📊 MEJORAS IMPLEMENTADAS:');
-  console.log('   ✅ Código modular con funciones auxiliares');
-  console.log('   ✅ Mejor organización y legibilidad');
-  console.log('   ✅ Funciones reutilizables');
-  console.log('   ✅ Más fácil de mantener y testear');
-  console.log('   ✅ Separación de responsabilidades');
-  console.log('\n🎯 RESULTADO TDD:');
-  console.log('   🔴 ROJO    → Escribimos la prueba que falla');
-  console.log('   🟢 VERDE   → Código mínimo que funciona');
-  console.log('   🔵 REFACTOR → Código mejorado y limpio');
-  console.log('');
-}, 3000);
+}

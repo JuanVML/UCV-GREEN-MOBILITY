@@ -13,7 +13,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
-import { registerUser } from "../../../backend/functions/src/auth/authController";
+import { registerUser } from "../api/registerUser";
 
 const Registro = () => {
   const [foto, setFoto] = useState<string | null>(null);

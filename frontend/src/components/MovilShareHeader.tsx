@@ -40,7 +40,8 @@ export default function MovilShareHeader({
           onPress={onAvatarPress}
         >
           <Image
-            source={{ uri: 'https://avatars.dicebear.com/api/identicon/ucv-user.png' }}
+            // Reemplazado avatar.png (no existente) por avatarbot.png disponible en assets
+            source={require('../../assets/images/avatarbot.png')}
             style={styles.headerAvatar}
           />
         </TouchableOpacity>

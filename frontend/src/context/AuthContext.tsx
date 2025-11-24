@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import { loginWithEmail, registerUser } from "../../../backend/functions/src/auth/authController";
+import { loginWithEmail } from "../api/auth";
 import { auth, db } from "../api/firebase";
 
 type User = {
