@@ -49,10 +49,6 @@ const createRateLimiter = (max: number) => rateLimit({
   message: {
     error: 'Demasiadas peticiones, por favor intenta más tarde',
     code: 'RATE_LIMIT_EXCEEDED'
-  },
-  keyGenerator: (req) => {
-    // Usar userId del body, o IP como fallback
-    return req.body?.userId || req.ip || 'anonymous';
   }
 });
 

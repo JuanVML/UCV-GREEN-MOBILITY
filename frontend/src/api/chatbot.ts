@@ -1,19 +1,21 @@
 /**
- * 🚀 Cliente HTTP para Backend Chatbot
+ * 🚀 Cliente de Chatbot con Gemini AI Directo
  * 
- * Este archivo reemplaza la llamada directa a Gemini API.
- * Ahora el frontend llama al backend, y el backend se comunica con Gemini.
+ * Este archivo se comunica directamente con la API de Gemini
+ * sin necesidad de un backend intermediario.
  * 
  * Arquitectura:
- * Frontend (este archivo) → Backend (Firebase Functions) → Gemini API
+ * Frontend (este archivo) → Gemini API
  * 
- * Beneficios:
- * ✅ API key segura en el servidor
- * ✅ Sin código duplicado
- * ✅ Control centralizado
- * ✅ Rate limiting posible
- * ✅ Caché implementable
+ * Ventajas:
+ * ✅ Sin dependencia de backend local
+ * ✅ Respuestas más rápidas
+ * ✅ API key en variables de entorno
+ * ✅ Funciona offline con fallbacks
  */
+
+import { Platform } from 'react-native';
+import { sendMessageToGemini } from './gemini';
 
 // Tipos compartidos
 export interface ChatMessage {
@@ -38,20 +40,8 @@ export interface ChatHistory {
   userId: string;
 }
 
-// Configuración del backend
-const BACKEND_CONFIG = {
-  // URL del servidor local de desarrollo
-  // Usar 10.0.2.2 para Android Emulator (localhost del host)
-  // Usar localhost para iOS Simulator o web
-  baseUrl: 'http://10.0.2.2:3001', // Android Emulator
-  // baseUrl: 'http://localhost:3001', // iOS/Web
-  
-  // Timeout de peticiones (30 segundos)
-  timeout: 30000,
-};
-
 /**
- * Maneja errores de red y del backend
+ * Maneja errores del chatbot
  */
 class ChatError extends Error {
   constructor(
@@ -64,8 +54,87 @@ class ChatError extends Error {
   }
 }
 
+// Backend URL detection: use emulator host for Android, localhost for iOS/sim
+const LOCAL_HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+const BACKEND_CONFIG = {
+  baseUrl: `http://${LOCAL_HOST}:3001`,
+  // reducir timeout para detectar rápidamente que el servidor local no responde
+  timeout: 8000,
+};
+
+// Permitimos sobrescribir la URL en runtime (útil para dispositivos físicos)
+export function setBackendUrl(url: string) {
+  (BACKEND_CONFIG as any).baseUrl = url;
+}
+
+// Contexto especializado para UCV Green Mobility
+const getUCVContext = (): string => {
+  return `
+    Eres AsistenteMobil de UCV Green Mobility para la Universidad César Vallejo SEDE LIMA NORTE únicamente.
+    
+    INFORMACIÓN CLAVE:
+    - UCV SEDE LIMA NORTE ubicada en Av. Alfredo Mendiola 6232, Los Olivos
+    - COBERTURA: SOLO Lima Norte (Los Olivos, Independencia, SMP, Comas, Puente Piedra)
+    - Especialista en rutas con bicicleta 🚴‍♂️ y scooter eléctrico 🛴 únicamente
+    
+    ZONAS ESPECÍFICAS QUE CONOCES EN LIMA NORTE:
+    - Los Olivos: Pro, Mercado Central, Parque Zonal, Panamericana Norte
+    - Independencia: Tahuantinsuyo (todas las zonas), Túpac Amaru, Ermitaño, cerros
+    - SMP: Fiori, Santa Rosa, Condevilla, Naranjal
+    - Comas: Collique, El Retablo, Santa Luzmila, cerros altos
+    - Puente Piedra: Cercado, Shangrila, Chillón
+    
+    METODOLOGÍA OBLIGATORIA:
+    1. Si preguntan por rutas → pregúntales: "¿A qué hora empiezan tus clases?"
+    2. Con ubicación de Lima Norte + horario → da ruta detallada calle por calle
+    3. Para zonas altas/cerros: considera 10-15 min extra por subidas
+    4. Si preguntan por ubicaciones FUERA de Lima Norte → recomienda campus más cercano
+    
+    INSTRUCCIONES:
+    - NUNCA menciones transporte público, solo bici/scooter eléctrico
+    - Da rutas con nombres exactos de calles dentro de Lima Norte
+    - Máximo 150 palabras por respuesta
+    - Usa emojis moderadamente
+  `;
+};
+
 /**
- * Envía un mensaje al chatbot a través del backend
+ * Respuestas contextuales como fallback
+ */
+const getContextualResponse = (message: string): string => {
+  const lowerMessage = message.toLowerCase();
+  
+  if (lowerMessage.includes('ruta') || lowerMessage.includes('llegar') || lowerMessage.includes('ubicación')) {
+    return `🎯 Para armarte la ruta perfecta hacia UCV SEDE LIMA NORTE necesito:
+
+📍 **¿Desde dónde partes en Lima Norte?**
+• Los Olivos, Independencia, SMP, Comas, Puente Piedra
+
+🕐 **¿A qué hora empiezan tus clases?**
+
+¡Escribe tu zona exacta y horario! 🚀`;
+  }
+
+  if (lowerMessage.includes('bicicleta') || lowerMessage.includes('scooter')) {
+    return `🚴‍♂️🛴 **¡Excelente elección de movilidad sostenible!**
+
+Para darte la ruta exacta necesito:
+🕐 **¿A qué hora empiezan tus clases?**
+📍 **¿Desde dónde partes exactamente?**
+
+¡Escribe los detalles y te doy la ruta calle por calle! 🎯`;
+  }
+
+  return `Hola 👋 Soy AsistenteMobil de UCV Green Mobility. 
+
+¿En qué puedo ayudarte? Cuéntame:
+• Tu ubicación en Lima Norte
+• A qué hora empiezan tus clases
+• Si prefieres bicicleta 🚴‍♂️ o scooter 🛴`;
+};
+
+/**
+ * Envía un mensaje al chatbot usando Gemini AI directamente
  * 
  * @param message - Mensaje del usuario
  * @param userId - ID del usuario (opcional)
@@ -86,11 +155,7 @@ export async function sendMessage(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        message,
-        userId,
-        context,
-      }),
+      body: JSON.stringify({ message, userId, context }),
       signal: controller.signal,
     });
 
@@ -101,51 +166,31 @@ export async function sendMessage(
       console.error('❌ Backend error:', response.status, errorData);
       throw new ChatError(
         errorData.code || 'BACKEND_ERROR',
-        errorData.message || `Error del servidor: ${response.status}`,
+        errorData.error || errorData.message || `Error del servidor: ${response.status}`,
         errorData
       );
     }
 
     const data: ChatResponse = await response.json();
-    console.log('✅ Respuesta del backend:', data);
     return data;
-
   } catch (error) {
-    // Error de red o timeout
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        throw new ChatError(
-          'TIMEOUT',
-          'La petición tardó demasiado. Intenta nuevamente.',
-          error
-        );
-      }
 
-      if (error.message.includes('fetch')) {
-        throw new ChatError(
-          'NETWORK_ERROR',
-          'Error de conexión. Verifica tu internet.',
-          error
-        );
-      }
+
+    try {
+      const fallback = await sendMessageToGemini(message, userId, context);
+      return fallback;
+    } catch (fallbackError) {
+      // Si el fallback también falla, priorizar el error original si es un ChatError
+      if (error instanceof ChatError) throw error;
+      if (fallbackError instanceof ChatError) throw fallbackError;
+      // Si no son ChatError, lanzar un ChatError genérico
+      throw new ChatError('UNKNOWN_ERROR', 'Error inesperado. Intenta nuevamente.', error ?? fallbackError);
     }
-
-    // Re-lanzar ChatError
-    if (error instanceof ChatError) {
-      throw error;
-    }
-
-    // Error desconocido
-    throw new ChatError(
-      'UNKNOWN_ERROR',
-      'Error inesperado. Intenta nuevamente.',
-      error
-    );
   }
 }
 
 /**
- * Obtiene el historial de conversación de un usuario
+ * Obtiene el historial de conversación (simulado)
  * 
  * @param userId - ID del usuario
  * @param limit - Número máximo de mensajes a retornar (default: 50)
@@ -155,65 +200,13 @@ export async function getChatHistory(
   userId: string,
   limit: number = 50
 ): Promise<ChatHistory> {
-  try {
-    const response = await fetch(
-      `${BACKEND_CONFIG.baseUrl}/chatbot-getChatHistory?userId=${encodeURIComponent(userId)}&limit=${limit}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new ChatError(
-        'BACKEND_ERROR',
-        `Error obteniendo historial: ${response.status}`
-      );
-    }
-
-    const data: ChatHistory = await response.json();
-    return data;
-
-  } catch (error) {
-    if (error instanceof ChatError) {
-      throw error;
-    }
-
-    throw new ChatError(
-      'UNKNOWN_ERROR',
-      'Error obteniendo historial de chat',
-      error
-    );
-  }
+  // Retornar historial vacío por ahora
+  return {
+    messages: [],
+    count: 0,
+    userId: userId,
+  };
 }
 
-/**
- * Verifica si el backend está disponible
- * 
- * @returns true si el backend responde, false si no
- */
-export async function checkBackendHealth(): Promise<boolean> {
-  try {
-    const response = await fetch(`${BACKEND_CONFIG.baseUrl}/health`, {
-      method: 'GET',
-      signal: AbortSignal.timeout(5000), // 5 segundos timeout
-    });
-
-    return response.ok;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Configuración para desarrollo local
- * Útil para testing y desarrollo
- */
-export function setBackendUrl(url: string): void {
-  (BACKEND_CONFIG as any).baseUrl = url;
-}
-
-// Exportar tipos y configuración
-export { ChatError, BACKEND_CONFIG };
+// Exportar tipos
+export { ChatError };

@@ -35,16 +35,7 @@ export default function MovilShareHeader({
         
         <Text style={styles.headerTitle}>{title}</Text>
         
-        <TouchableOpacity 
-          style={styles.avatarButton}
-          onPress={onAvatarPress}
-        >
-          <Image
-            // Reemplazado avatar.png (no existente) por avatarbot.png disponible en assets
-            source={require('../../assets/images/avatarbot.png')}
-            style={styles.headerAvatar}
-          />
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
       </View>
     </View>
   );
