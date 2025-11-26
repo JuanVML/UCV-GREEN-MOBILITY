@@ -21,11 +21,62 @@ import * as Speech from "expo-speech";
 import { useMap, RouteInfo, Coordinates } from "../hooks/useMap";
 import { GOOGLE_MAPS_API_KEY } from "../api/config";
 import { lightTheme } from "../theme/colors";
+import MapViewDirections from "react-native-maps-directions";
 
 type Step = {
   html_instructions?: string;
   end_location?: { lat: number; lng: number };
   polyline?: { points?: string };
+};
+
+// MODAL PERSONALIZADO PARA ALERTAS
+type CustomModalProps = {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  message: string;
+  buttons: Array<{
+    text: string;
+    style?: "default" | "cancel" | "destructive";
+    onPress: () => void;
+  }>;
+};
+
+const CustomAlertModal: React.FC<CustomModalProps> = ({ visible, onClose, title, message, buttons }) => {
+  return (
+    <Modal visible={visible} animationType="fade" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>{title}</Text>
+          <Text style={styles.modalMessage}>{message}</Text>
+          
+          <View style={styles.modalButtonsContainer}>
+            {buttons.map((button, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => {
+                  button.onPress();
+                  onClose();
+                }}
+                style={[
+                  styles.modalButton,
+                  button.style === "destructive" && styles.modalButtonDestructive,
+                  button.style === "cancel" && styles.modalButtonCancel,
+                ]}
+              >
+                <Text style={[
+                  styles.modalButtonText,
+                  button.style === "destructive" && styles.modalButtonTextDestructive,
+                ]}>
+                  {button.text}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 };
 
 export default function Map() {
@@ -76,6 +127,13 @@ export default function Map() {
   // Para evitar anuncios repetidos
   const announcedRef = useRef<Record<number, Set<number>>>({});
 
+  // ESTADOS PARA MODALES PERSONALIZADOS
+  const [deleteMarkerModal, setDeleteMarkerModal] = useState(false);
+  const [saveRouteModal, setSaveRouteModal] = useState(false);
+  const [stopNavigationModal, setStopNavigationModal] = useState(false);
+  const [deleteRouteModal, setDeleteRouteModal] = useState(false);
+  const [routeToDelete, setRouteToDelete] = useState<{id: string, name: string} | null>(null);
+
   // -----------------------------
   // Utils
   // -----------------------------
@@ -116,49 +174,84 @@ export default function Map() {
   const formatMinutes = useCallback((mins: number | null) => (mins === null ? "--" : `${mins} min`), []);
   const formatSpeed = useCallback((s: number | null) => (s === null ? "--" : `${s.toFixed(1)} km/h`), []);
 
-  // Ciclovías
-  const ciclovias = useMemo(
-    () => [
-      {
-        id: "c1",
-        nombre: "Ciclovía Los Olivos y Comas",
-        coordinates: [
-          { latitude: -11.996111, longitude: -77.078453 },
-          { latitude: -11.995982, longitude: -77.058372 },
-          { latitude: -11.982991, longitude: -77.078494 },
-          { latitude: -11.983057, longitude: -77.058137 },
-          { latitude: -12.016335, longitude: -77.078028 },
-          { latitude: -11.922616, longitude: -77.048798 },
-        ],
-        color: "#00C853",
-      },
-    ],
-    []
-  );
+// Ciclovías
+const ciclovias = useMemo(
+  () => [
+    {
+      id: "c1",
+      nombre: "Ciclovía Av. Universitaria",
+      coordinates: [
+        { latitude: -11.964007, longitude: -77.071952 },
+        { latitude: -11.965644, longitude: -77.073748 },
+        { latitude: -11.967823, longitude: -77.074849 },
+        { latitude: -11.971881, longitude: -77.075831 },
+        { latitude: -11.983128, longitude: -77.078542 },
+        { latitude: -11.996115, longitude: -77.084597 },
+        { latitude: -12.006644, longitude: -77.082470 },
+      
+        { latitude: -12.019219, longitude: -77.076368 }, 
+      ],
+      color: "#00C853", 
+    },
+    {
+      id: "c2",
+      nombre: "Ciclovía Av. Próceres",
+      coordinates: [
+        { latitude: -11.969945, longitude: -77.080214 },
+        { latitude: -11.963803, longitude: -77.077432 },
+        { latitude: -11.959290, longitude: -77.075909 },
+        { latitude: -11.956302, longitude: -77.075682 },
+        { latitude: -11.954378, longitude: -77.075995 },
+        { latitude: -11.947730, longitude: -77.077019 },
+      ],
+      color: "#00C853",
+    },
+    {
+      id: "c3",
+      nombre: "Ciclovía Av. 2 de Octubre",
+      coordinates: [
+        { latitude: -11.949971, longitude: -77.084348 }, 
+        { latitude: -11.947576, longitude: -77.077046 },
+        { latitude: -11.945963, longitude: -77.072088 },
+      ],
+      color: "#00C853", 
+    },
+    {
+      id: "c4",
+      nombre: "Ciclovía Av. Izaguirre",
+      coordinates: [
+        { latitude: -11.991446, longitude: -77.080028 },
+        { latitude: -11.991693, longitude: -77.075173 },
+        { latitude: -11.991186, longitude: -77.071719 },
+        { latitude: -11.990187, longitude: -77.065008 },
+      ],
+      color: "#00C853", 
+    },
+  ],
+  []
+);
 
-  // 🔥 FUNCIÓN MEJORADA: Eliminar punto con estilo modal
+  // Eliminar punto con modal personalizado
   const handleLongPressMarker = useCallback(() => {
     if (selectedPlace) {
-      Alert.alert(
-        "🗑️ Eliminar punto seleccionado",
-        `¿Estás seguro de que quieres eliminar "${selectedPlace.name || 'Ubicación seleccionada'}"?`,
-        [
-          {
-            text: "Cancelar",
-            style: "cancel"
-          },
-          {
-            text: "Eliminar",
-            style: "destructive",
-            onPress: () => {
-              setSelectedPlace(null);
-              calculateRoute(mode, null);
-            }
-          }
-        ]
-      );
+      setDeleteMarkerModal(true);
     }
-  }, [selectedPlace, mode, calculateRoute]);
+  }, [selectedPlace]);
+
+  // FUNCIÓN PARA ELIMINAR RUTA GUARDADA
+  const handleDeleteSavedRoute = useCallback((id: string, routeName: string) => {
+    setRouteToDelete({ id, name: routeName });
+    setDeleteRouteModal(true);
+  }, []);
+
+  // CONFIRMAR ELIMINACIÓN DE RUTA
+  const confirmDeleteRoute = useCallback(() => {
+    if (routeToDelete) {
+      deleteRoute(routeToDelete.id);
+      setRouteToDelete(null);
+      setDeleteRouteModal(false);
+    }
+  }, [routeToDelete, deleteRoute]);
 
   // --------------------------------
   // Efectos
@@ -254,14 +347,15 @@ export default function Map() {
     setMapType(next);
   }, [mapType, setMapType]);
 
-  // 🔥 CALCULAR RUTA CON MANEJO DE ERRORES
+  // CALCULAR RUTA CON MANEJO DE ERRORES
   const handleCalculateRoute = useCallback(async (routeMode: "ida" | "retorno") => {
     try {
       const route = await calculateRoute(routeMode, selectedPlace);
       
       if (route && route.id.includes('simulated')) {
+        // Aquí podrías agregar un modal personalizado si lo deseas
         Alert.alert(
-          "ℹ️ Ruta Estimada",
+          "ℹ Ruta Estimada",
           "Se está utilizando una ruta estimada. Las rutas detalladas no están disponibles en tu ubicación.",
           [{ text: "Entendido", style: "default" }]
         );
@@ -269,71 +363,34 @@ export default function Map() {
     } catch (error) {
       console.error("Error calculando ruta:", error);
       Alert.alert(
-        "❌ Error",
+        "Error",
         "No se pudo calcular la ruta. Verifica tu conexión e intenta nuevamente.",
         [{ text: "Aceptar", style: "default" }]
       );
     }
   }, [calculateRoute, selectedPlace]);
 
-  // 🔥 GUARDAR RUTA CON ALERT ESTILIZADO
+  //  GUARDAR RUTA CON MODAL PERSONALIZADO
   const handleSaveRoute = useCallback(() => {
     if (!lastRoute) {
-      Alert.alert(
-        "📝 Guardar Ruta",
-        "Primero calcula una ruta antes de guardarla",
-        [{ text: "Entendido", style: "default" }]
-      );
+      setSaveRouteModal(true);
       return;
     }
     
-    Alert.alert(
-      "💾 Guardar Ruta",
-      "¿Quieres guardar esta ruta en tu historial?",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel"
-        },
-        {
-          text: "Guardar",
-          style: "default",
-          onPress: () => {
-            saveRoute(selectedPlace, mode);
-            Alert.alert(
-              "✅ Guardado",
-              "Ruta guardada correctamente en tu historial",
-              [{ text: "Continuar", style: "default" }]
-            );
-          }
-        }
-      ]
-    );
-  }, [lastRoute, saveRoute, selectedPlace, mode]);
+    // Mostrar modal de confirmación para guardar
+    setSaveRouteModal(true);
+  }, [lastRoute]);
+
+  //  CONFIRMAR GUARDAR RUTA
+  const confirmSaveRoute = useCallback(() => {
+    saveRoute(selectedPlace, mode);
+    setSaveRouteModal(false);
+  }, [saveRoute, selectedPlace, mode]);
 
   const handleOpenSavedRoute = useCallback((route: RouteInfo) => {
     loadSavedRouteOnMap(route.id);
     setRoutesModal(false);
   }, [loadSavedRouteOnMap]);
-
-  // 🔥 ELIMINAR RUTA CON ALERT ESTILIZADO
-  const handleDeleteSavedRoute = useCallback((id: string, routeName: string) => {
-    Alert.alert(
-      "🗑️ Eliminar Ruta",
-      `¿Estás seguro de que quieres eliminar "${routeName}"?`,
-      [
-        {
-          text: "Cancelar",
-          style: "cancel"
-        },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: () => deleteRoute(id)
-        }
-      ]
-    );
-  }, [deleteRoute]);
 
   // -----------------------------
   // NAVEGACIÓN AUTOMÁTICA MEJORADA
@@ -341,7 +398,7 @@ export default function Map() {
   const startNavigation = useCallback(() => {
     if (!lastRoute) {
       Alert.alert(
-        "🚴 Iniciar Navegación",
+        "Iniciar Navegación",
         "Primero calcula una ruta antes de iniciar la navegación",
         [{ text: "Entendido", style: "default" }]
       );
@@ -350,7 +407,7 @@ export default function Map() {
     
     if (!lastRoute.steps || lastRoute.steps.length === 0) {
       Alert.alert(
-        "📝 Sin Instrucciones Detalladas",
+        "Sin Instrucciones Detalladas",
         "La ruta no contiene instrucciones paso a paso. Se utilizará navegación básica.",
         [
           {
@@ -403,46 +460,37 @@ export default function Map() {
     speak("Iniciando navegación. Sigue las instrucciones de voz.");
   }, [lastRoute, userLocation, speak]);
 
+  // DETENER NAVEGACIÓN CON MODAL PERSONALIZADO
   const stopNavigation = useCallback(() => {
-    Alert.alert(
-      "🛑 Finalizar Navegación",
-      "¿Deseas finalizar la navegación activa?",
-      [
-        {
-          text: "Continuar",
-          style: "cancel"
-        },
-        {
-          text: "Finalizar",
-          style: "destructive",
-          onPress: () => {
-            setNavegando(false);
-            setCurrentStep(0);
-            setSteps([]);
-            setFollowUser(false);
-            setModoPrimerPlano(false);
-            Speech.stop();
-
-            setDistanceRemainingMeters(null);
-            setMinutesRemaining(null);
-            setSpeedKmh(null);
-            prevLocRef.current = null;
-            prevTsRef.current = null;
-            announcedRef.current = {};
-
-            if (navigationIntervalRef.current) {
-              clearInterval(navigationIntervalRef.current as unknown as number);
-              navigationIntervalRef.current = null;
-            }
-
-            speak("Navegación finalizada.");
-          }
-        }
-      ]
-    );
+    setStopNavigationModal(true);
   }, []);
 
-  // 🔥 NAVEGACIÓN AUTOMÁTICA MEJORADA
+  // CONFIRMAR DETENER NAVEGACIÓN
+  const confirmStopNavigation = useCallback(() => {
+    setNavegando(false);
+    setCurrentStep(0);
+    setSteps([]);
+    setFollowUser(false);
+    setModoPrimerPlano(false);
+    Speech.stop();
+
+    setDistanceRemainingMeters(null);
+    setMinutesRemaining(null);
+    setSpeedKmh(null);
+    prevLocRef.current = null;
+    prevTsRef.current = null;
+    announcedRef.current = {};
+
+    if (navigationIntervalRef.current) {
+      clearInterval(navigationIntervalRef.current as unknown as number);
+      navigationIntervalRef.current = null;
+    }
+
+    speak("Navegación finalizada.");
+    setStopNavigationModal(false);
+  }, []);
+
+  // NAVEGACIÓN AUTOMÁTICA MEJORADA
   useEffect(() => {
     if (!navegando) return;
 
@@ -499,7 +547,7 @@ export default function Map() {
           speak(`Ahora ${nextInstruction.toLowerCase()}`);
         } else {
           speak("¡Has llegado a tu destino! Navegación completada.");
-          stopNavigation();
+          confirmStopNavigation();
         }
       }
 
@@ -532,7 +580,7 @@ export default function Map() {
         navigationIntervalRef.current = null;
       }
     };
-  }, [navegando, currentStep, steps, userLocation, followUser, lastRoute, stopNavigation, speak, stripHtml, distanceMeters, UCV_COORDS, modoPrimerPlano]);
+  }, [navegando, currentStep, steps, userLocation, followUser, lastRoute, confirmStopNavigation, speak, stripHtml, distanceMeters, UCV_COORDS, modoPrimerPlano]);
 
   // Actualizar métricas en tiempo real
   useEffect(() => {
@@ -613,8 +661,13 @@ export default function Map() {
           />
         )}
 
-        {showCiclovias && ciclovias.map((c) => (
-          <Polyline key={c.id} coordinates={c.coordinates} strokeColor={c.color} strokeWidth={4} />
+      {showCiclovias && ciclovias.map((c) => (
+          <Polyline 
+            key={c.id} 
+            coordinates={c.coordinates} // Usará el arreglo completo de coordenadas
+            strokeColor={c.color} 
+            strokeWidth={4} 
+          />
         ))}
       </MapView>
 
@@ -676,19 +729,31 @@ export default function Map() {
           // MODO NORMAL
           <>
             <View style={styles.buttonsRow}>
-              <TouchableOpacity 
-                style={[styles.routeCircleButton, { backgroundColor: lightTheme.primary }, mode === "ida" && styles.routeCircleButtonActive]} 
-                onPress={() => { setMode("ida"); handleCalculateRoute("ida"); }}
-              >
-                <Ionicons name="arrow-forward" size={24} color="#fff" />
-              </TouchableOpacity>
+              <TouchableOpacity
+  style={[
+    styles.routeCircleButton,
+    { backgroundColor: lightTheme.primary },
+    mode === "ida" && styles.routeCircleButtonActive
+  ]}
+  onPress={() => { setMode("ida"); handleCalculateRoute("ida"); }}
+  testID="btn-ruta-ida"
+  accessibilityLabel="btn-ruta-ida"     
+>
+  <Ionicons name="arrow-forward" size={24} color="#fff" />
+</TouchableOpacity>
 
-              <TouchableOpacity 
-                style={[styles.routeCircleButton, { backgroundColor: "#E53935" }, mode === "retorno" && styles.routeCircleButtonActive]} 
-                onPress={() => { setMode("retorno"); handleCalculateRoute("retorno"); }}
-              >
-                <Ionicons name="arrow-back" size={24} color="#fff" />
-              </TouchableOpacity>
+<TouchableOpacity
+  style={[
+    styles.routeCircleButton,
+    { backgroundColor: "#E53935" },
+    mode === "retorno" && styles.routeCircleButtonActive
+  ]}
+  onPress={() => { setMode("retorno"); handleCalculateRoute("retorno"); }}
+  testID="btn-ruta-retorno"
+  accessibilityLabel="btn-ruta-retorno" 
+>
+  <Ionicons name="arrow-back" size={24} color="#fff" />
+</TouchableOpacity>
 
               <TouchableOpacity style={[styles.routeCircleButton, { backgroundColor: lightTheme.primary }]} onPress={handleSaveRoute}>
                 <Ionicons name="bookmark" size={24} color="#fff" />
@@ -701,13 +766,13 @@ export default function Map() {
                   {lastRoute.mode === "ida" ? "🚴 Ruta a la UCV" : "🏠 Ruta a tu casa"}
                   {lastRoute.id.includes('simulated') && " • Estimada"}
                 </Text>
-                <Text style={styles.infoText}>📍 Distancia: {lastRoute.distance}</Text>
+                <Text style={styles.infoText}testID="resultado-distancia-ruta">📍 Distancia: {lastRoute.distance}</Text>
                 <Text style={styles.infoText}>⏱️ Duración: {lastRoute.duration}</Text>
                 
                 <Text style={styles.routeNote}>
                   {lastRoute.mode === "ida" 
-                    ? "Ruta optimizada para bicicleta hacia la UCV" 
-                    : "Ruta optimizada para bicicleta hacia tu ubicación"
+                    ? "Ruta optimizada para bicicleta y scooter hacia la UCV" 
+                    : "Ruta optimizada para bicicleta y scooter hacia tu ubicación"
                   }
                   {lastRoute.id.includes('simulated') && " • Ruta estimada"}
                 </Text>
@@ -725,7 +790,7 @@ export default function Map() {
         ) : (
           // MODO NAVEGACIÓN ACTIVA
           <View style={styles.infoBox}>
-            <Text style={styles.modeText}>🎯 Navegación Activa</Text>
+            <Text style={styles.modeText}>Navegación Activa</Text>
             <Text style={styles.infoText}>Paso {currentStep + 1} de {steps.length}</Text>
             <Text style={[styles.infoText, { marginTop: 6, textAlign: 'center' }]}>
               {steps[currentStep]?.html_instructions?.replace(/<[^>]+>/g, "") || "Sigue la ruta marcada en el mapa"}
@@ -837,6 +902,102 @@ export default function Map() {
           </View>
         </View>
       </Modal>
+
+      {/* MODALES PERSONALIZADOS PARA ALERTAS */}
+      
+      {/* Modal Eliminar Punto Seleccionado */}
+      <CustomAlertModal
+        visible={deleteMarkerModal}
+        onClose={() => setDeleteMarkerModal(false)}
+        title="Eliminar Punto Seleccionado"
+        message={`¿Estás seguro de que quieres eliminar "${selectedPlace?.name || 'Ubicación seleccionada'}"?`}
+        buttons={[
+          {
+            text: "Cancelar",
+            style: "cancel",
+            onPress: () => {}
+          },
+          {
+            text: "Eliminar",
+            style: "destructive",
+            onPress: () => {
+              setSelectedPlace(null);
+              calculateRoute(mode, null);
+            }
+          }
+        ]}
+      />
+
+      {/* Modal Guardar Ruta */}
+      <CustomAlertModal
+        visible={saveRouteModal}
+        onClose={() => setSaveRouteModal(false)}
+        title={lastRoute ? "Guardar Ruta" : "Guardar Ruta"}
+        message={lastRoute 
+          ? "¿Quieres guardar esta ruta en tu historial?" 
+          : "Primero calcula una ruta antes de guardarla"}
+        buttons={lastRoute ? [
+          {
+            text: "Cancelar",
+            style: "cancel",
+            onPress: () => {}
+          },
+          {
+            text: "Guardar",
+            style: "default",
+            onPress: confirmSaveRoute
+          }
+        ] : [
+          {
+            text: "Entendido",
+            style: "default",
+            onPress: () => {}
+          }
+        ]}
+      />
+
+      {/* Modal Finalizar Navegación */}
+      <CustomAlertModal
+        visible={stopNavigationModal}
+        onClose={() => setStopNavigationModal(false)}
+        title="Finalizar Navegación"
+        message="¿Deseas finalizar la navegación activa?"
+        buttons={[
+          {
+            text: "Continuar",
+            style: "cancel",
+            onPress: () => {}
+          },
+          {
+            text: "Finalizar",
+            style: "destructive",
+            onPress: confirmStopNavigation
+          }
+        ]}
+      />
+
+      {/* Modal Eliminar Ruta Guardada */}
+      <CustomAlertModal
+        visible={deleteRouteModal}
+        onClose={() => {
+          setDeleteRouteModal(false);
+          setRouteToDelete(null);
+        }}
+        title="🗑️ Eliminar Ruta"
+        message={`¿Estás seguro de que quieres eliminar "${routeToDelete?.name || 'Ruta sin nombre'}"?`}
+        buttons={[
+          {
+            text: "Cancelar",
+            style: "cancel",
+            onPress: () => {}
+          },
+          {
+            text: "Eliminar",
+            style: "destructive",
+            onPress: confirmDeleteRoute
+          }
+        ]}
+      />
     </View>
   );
 }
@@ -904,6 +1065,13 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", alignItems: "center", padding: 20 },
   modalContent: { width: "100%", backgroundColor: "#fff", borderRadius: 20, padding: 20, maxHeight: "70%" },
   modalTitle: { fontFamily: "Outfit-Medium", fontSize: 18, color: lightTheme.primary, textAlign: "center" },
+  modalMessage: { fontFamily: "Mooli-Regular", fontSize: 16, color: "#333", textAlign: "center", marginVertical: 15, lineHeight: 22 },
+  modalButtonsContainer: { flexDirection: "row", justifyContent: "space-around", marginTop: 20 },
+  modalButton: { flex: 1, marginHorizontal: 5, paddingVertical: 12, borderRadius: 12, backgroundColor: lightTheme.primary },
+  modalButtonCancel: { backgroundColor: "#51bc12ff" },
+  modalButtonDestructive: { backgroundColor: "#E53935" },
+  modalButtonText: { color: "#fff", textAlign: "center", fontFamily: "Outfit-Medium", fontSize: 16 },
+  modalButtonTextDestructive: { color: "#fff" },
   input: { borderWidth: 1, borderColor: lightTheme.mutedText, borderRadius: 12, padding: 10, marginBottom: 10, color: "#333" },
   resultItem: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#eee", fontFamily: "Mooli-Regular" },
   closeBtn: { backgroundColor: lightTheme.primary, borderRadius: 20, paddingVertical: 12, marginTop: 15 },

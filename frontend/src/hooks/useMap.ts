@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import * as Location from "expo-location";
 import { GOOGLE_MAPS_API_KEY } from "../api/config";
 
-// 🔹 Coordenadas de la UCV Los Olivos
+// Coordenadas de la UCV Los Olivos
 export const UCV_COORDS = { latitude: -11.9552328, longitude: -77.0685585 };
 
-// 🔹 Tipos personalizados
+// Tipos personalizados
 export interface Coordinates {
   latitude: number;
   longitude: number;
@@ -24,7 +24,7 @@ export interface RouteInfo {
   steps?: any[];
 }
 
-// 🔹 Decodificar polilínea de Google Maps
+// Decodificar polilínea de Google Maps
 function decodePolyline(encoded: string): Coordinates[] {
   let index = 0,
     lat = 0,
@@ -59,7 +59,7 @@ function decodePolyline(encoded: string): Coordinates[] {
   return coordinates;
 }
 
-// 🔹 Hook principal
+//  Hook principal
 export function useMap() {
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const [lastRoute, setLastRoute] = useState<RouteInfo | null>(null);
@@ -68,7 +68,7 @@ export function useMap() {
     "standard" | "satellite" | "terrain" | "hybrid"
   >("standard");
 
-  // 🛰️ Obtener ubicación del usuario
+  // Obtener ubicación del usuario
   useEffect(() => {
     let watcher: Location.LocationSubscription | null = null;
 
@@ -114,7 +114,7 @@ export function useMap() {
   }, []);
 
   /**
-   * 🔥 SOLUCIÓN REAL: Usar driving pero simular que es para bicicletas
+   * SOLUCIÓN REAL: Usar driving pero simular que es para bicicletas
    * En Perú no hay soporte para bicycling, así que usamos driving
    * pero adaptamos los tiempos y distancias para bicicleta
    */
@@ -138,12 +138,12 @@ export function useMap() {
         : `${selectedPlace?.latitude ?? userLocation?.latitude},${selectedPlace?.longitude ?? userLocation?.longitude}`;
 
     try {
-      // 🔥 USAR DRIVING (que sí funciona en Perú) pero adaptar para bicicleta
+      // USAR DRIVING (que sí funciona en Perú) pero adaptar para bicicleta
       const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(
         originStr
       )}&destination=${encodeURIComponent(destinationStr)}&key=${GOOGLE_MAPS_API_KEY}&mode=driving&units=metric&alternatives=true`;
       
-      console.log("📍 Calculando ruta con driving (adaptada para bici)...");
+      console.log("Calculando ruta con driving (adaptada para bici)...");
       
       const res = await fetch(url);
       const data: any = await res.json();
@@ -157,7 +157,7 @@ export function useMap() {
           ? decodePolyline(route.overview_polyline.points)
           : [];
 
-        // 🔥 ADAPTAR TIEMPO Y DISTANCIA PARA BICICLETA
+        // ADAPTAR TIEMPO Y DISTANCIA PARA BICICLETA
         const originalDistance = leg?.distance?.value ?? 0; // en metros
         const originalDuration = leg?.duration?.value ?? 0; // en segundos
 
@@ -203,7 +203,7 @@ export function useMap() {
       } else {
         console.warn("❌ No se pudo calcular la ruta:", data.status);
         
-        // 🔥 CREAR RUTA SIMULADA como fallback
+        // CREAR RUTA SIMULADA como fallback
         if (userLocation) {
           console.log("🔄 Creando ruta simulada...");
           return createSimulatedRoute(userLocation, mode, selectedPlace);
@@ -226,7 +226,7 @@ export function useMap() {
   };
 
   /**
-   * 🔥 CREAR RUTA SIMULADA cuando la API falle
+   * CREAR RUTA SIMULADA cuando la API falle
    */
   const createSimulatedRoute = (
     userLoc: Coordinates,
@@ -349,7 +349,7 @@ export function useMap() {
     }
   };
 
-  // 💾 Guardar ruta
+  // Guardar ruta
   const saveRoute = (selectedPlace: Coordinates | null, mode: "ida" | "retorno") => {
     if (!lastRoute) return;
 
