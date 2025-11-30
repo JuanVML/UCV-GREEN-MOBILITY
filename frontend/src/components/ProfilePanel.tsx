@@ -19,6 +19,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 import { auth, db } from "../api/firebase";
 import { useUser } from "../context/UserContext";
+import { useThemeContext } from "../context/ThemeContext";
 
 // Props recibidos desde el componente padre
 type Props = { visible: boolean; onClose: () => void };
@@ -37,9 +38,9 @@ type ProfileData = {
 
 // 🌿 Componente principal del panel de perfil
 export default function ProfilePanel({ visible, onClose }: Props) {
-  if (!visible) return null; // Si no está visible, no renderiza nada
+  if (!visible) return null;
 
-  // 🔹 Estados del componente
+  const { theme } = useThemeContext();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -174,9 +175,9 @@ export default function ProfilePanel({ visible, onClose }: Props) {
   // ⏳ Pantalla de carga mientras se obtiene la información
   if (loading) {
     return (
-      <View style={styles.overlay}>
-        <LinearGradient colors={["#E3F9EE", "#F8FFFB"]} style={styles.card}>
-          <ActivityIndicator size="large" color="#167D67" style={{ marginTop: 40 }} />
+      <View style={[styles.overlay, { backgroundColor: theme.background }]}>
+        <LinearGradient colors={[theme.card, theme.softCard]} style={styles.card}>
+          <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 40 }} />
         </LinearGradient>
       </View>
     );
@@ -184,18 +185,18 @@ export default function ProfilePanel({ visible, onClose }: Props) {
 
   // 🌿 UI principal del panel
   return (
-    <LinearGradient colors={["#E3F9EE", "#F8FFFB"]} style={styles.overlay}>
-      <View style={styles.card}>
+    <LinearGradient colors={[theme.card, theme.softCard]} style={styles.overlay}>
+      <View style={[styles.card, { backgroundColor: theme.card }]}>
         {/* Botón de regreso */}
         <TouchableOpacity style={styles.back} onPress={onClose}>
-          <Ionicons name="arrow-back" size={22} color="#167D67" />
+          <Ionicons name="arrow-back" size={22} color={theme.primary} />
         </TouchableOpacity>
 
         {/* Contenido con scroll */}
         <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 0 }}>
           {/* Imagen del perfil con anillo verde */}
           <View style={styles.avatarContainer}>
-            <LinearGradient colors={["#19A974", "#6AE58F"]} style={styles.avatarBorder}>
+            <LinearGradient colors={[theme.primary, theme.softCard]} style={styles.avatarBorder}>
               <Image
                 source={{
                   uri:
@@ -207,52 +208,52 @@ export default function ProfilePanel({ visible, onClose }: Props) {
             </LinearGradient>
 
             {/* Botón para cambiar imagen */}
-            <TouchableOpacity style={styles.changeButton} onPress={handleChangeImage}>
+            <TouchableOpacity style={[styles.changeButton, { backgroundColor: theme.primary }]} onPress={handleChangeImage}>
               <Ionicons name="camera-outline" size={16} color="#fff" />
               <Text style={styles.changeText}>Actualizar foto</Text>
             </TouchableOpacity>
           </View>
 
           {/* Título */}
-          <Text style={styles.title}>Perfil UCV</Text>
+          <Text style={[styles.title, { color: theme.primary }]}>Perfil UCV</Text>
 
           {/* Campos del usuario */}
-          <View style={styles.field}>
-            <Ionicons name="person-outline" size={16} color="#19A974" />
-            <Text style={styles.fieldText}>{profile?.name ?? "Sin nombre"}</Text>
+          <View style={[styles.field, { backgroundColor: theme.softCard }]}>
+            <Ionicons name="person-outline" size={16} color={theme.primary} />
+            <Text style={[styles.fieldText, { color: theme.mutedText }]}>{profile?.name ?? "Sin nombre"}</Text>
           </View>
 
-          <View style={styles.field}>
-            <Ionicons name="mail-outline" size={16} color="#19A974" />
-            <Text style={styles.fieldText}>{profile?.email ?? ""}</Text>
+          <View style={[styles.field, { backgroundColor: theme.softCard }]}>
+            <Ionicons name="mail-outline" size={16} color={theme.primary} />
+            <Text style={[styles.fieldText, { color: theme.mutedText }]}>{profile?.email ?? ""}</Text>
           </View>
 
-          <View style={styles.field}>
-            <Ionicons name="school-outline" size={16} color="#19A974" />
-            <Text style={styles.fieldText}>{profile?.carrera ?? ""}</Text>
+          <View style={[styles.field, { backgroundColor: theme.softCard }]}>
+            <Ionicons name="school-outline" size={16} color={theme.primary} />
+            <Text style={[styles.fieldText, { color: theme.mutedText }]}>{profile?.carrera ?? ""}</Text>
           </View>
 
-          <View style={styles.field}>
-            <Ionicons name="id-card-outline" size={16} color="#19A974" />
-            <Text style={styles.fieldText}>{profile?.dni ?? ""}</Text>
+          <View style={[styles.field, { backgroundColor: theme.softCard }]}>
+            <Ionicons name="id-card-outline" size={16} color={theme.primary} />
+            <Text style={[styles.fieldText, { color: theme.mutedText }]}>{profile?.dni ?? ""}</Text>
           </View>
 
-          <View style={styles.field}>
-            <Ionicons name="bicycle-outline" size={16} color="#19A974" />
-            <Text style={styles.fieldText}>{profile?.ciclo ?? ""}</Text>
+          <View style={[styles.field, { backgroundColor: theme.softCard }]}>
+            <Ionicons name="bicycle-outline" size={16} color={theme.primary} />
+            <Text style={[styles.fieldText, { color: theme.mutedText }]}>{profile?.ciclo ?? ""}</Text>
           </View>
 
           {/* Campo de contraseña con toggle */}
-          <View style={[styles.field, { marginBottom: 0 }]}>
-            <Ionicons name="lock-closed-outline" size={16} color="#19A974" />
-            <Text style={styles.fieldText}>
+          <View style={[styles.field, { marginBottom: 0, backgroundColor: theme.softCard }]}>
+            <Ionicons name="lock-closed-outline" size={16} color={theme.primary} />
+            <Text style={[styles.fieldText, { color: theme.mutedText }]}>
               {showPassword ? profile?.password : profile?.password ? "••••••••" : ""}
             </Text>
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
               <Ionicons
                 name={showPassword ? "eye" : "eye-off"}
                 size={18}
-                color="#888"
+                color={theme.mutedText}
                 style={{ marginLeft: 6 }}
               />
             </TouchableOpacity>
@@ -261,7 +262,7 @@ export default function ProfilePanel({ visible, onClose }: Props) {
 
         {/* Toast animado */}
         {successVisible && (
-          <Animated.View style={[styles.toast, { opacity: fadeAnim }]}>
+          <Animated.View style={[styles.toast, { opacity: fadeAnim, backgroundColor: theme.primary }]}>
             <Ionicons name="leaf" size={22} color="#fff" style={{ marginRight: 6 }} />
             <Text style={styles.toastText}>Imagen actualizada correctamente 🌿</Text>
           </Animated.View>

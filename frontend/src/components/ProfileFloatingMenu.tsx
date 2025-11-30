@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useThemeContext } from '../context/ThemeContext';
 
 type Props = {
   visible: boolean;
@@ -9,17 +11,36 @@ type Props = {
 };
 
 export default function ProfileFloatingMenu({ visible, onViewProfile, onToggleDark, onSignOut }: Props) {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { theme } = useThemeContext();
+
   if (!visible) return null;
+
+  const handleToggleDark = () => {
+    setIsDarkMode(!isDarkMode);
+    onToggleDark();
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.menu}>
+      <View style={[styles.menu, { backgroundColor: theme.card, borderColor: theme.softCard, borderWidth: 1 }]}>
         <TouchableOpacity style={styles.item} onPress={onViewProfile}>
-          <Text style={styles.text}>ver perfil</Text>
+          <Ionicons name="person-circle-outline" size={16} color={theme.primary} style={{ marginRight: 8 }} />
+          <Text style={[styles.text, { color: theme.primary }]}>ver perfil</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.item} onPress={onToggleDark}>
-          <Text style={styles.text}>modo oscuro</Text>
+        <TouchableOpacity style={styles.item} onPress={handleToggleDark}>
+          <Ionicons 
+            name={isDarkMode ? 'sunny-outline' : 'moon-outline'} 
+            size={16} 
+            color={theme.primary}
+            style={{ marginRight: 8 }}
+          />
+          <Text style={[styles.text, { color: theme.primary }]}>
+            {isDarkMode ? 'modo claro' : 'modo oscuro'}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.item} onPress={onSignOut}>
+          <Ionicons name="log-out-outline" size={16} color="#C84B4B" style={{ marginRight: 8 }} />
           <Text style={[styles.text, { color: '#C84B4B' }]}>salir</Text>
         </TouchableOpacity>
       </View>

@@ -8,7 +8,9 @@ import StatWidget from '../components/StatWidget';
 import RecommendedRoutes from '../components/RecommendedRoutes';
 import { useDashboardStats, useRecommendedRoutes } from '../hooks/useDashboardStats';
 import { useNavigation } from '@react-navigation/native';
-import { lightTheme } from '../theme/colors';
+import { useThemeContext } from '../context/ThemeContext';
+import { useAuth } from '../hooks/useAuth';
+import { lightTheme, darkTheme } from '../theme/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -18,18 +20,26 @@ export default function DashboardScreen() {
   const [panelVisible, setPanelVisible] = useState(false);
   const { stats, isLoading, refreshStats } = useDashboardStats();
   const recommendedRoutes = useRecommendedRoutes();
+  const { theme, toggleTheme } = useThemeContext();
+  const { logout } = useAuth();
+
+  const handleSignOut = async () => {
+    await logout();
+    setMenuVisible(false);
+    navigation.navigate('Login');
+  };
 
   return (
-    <View style={styles.root}>
-      {/* Fondo de color sólido (ACTIVO) */}
-      <View style={styles.colorBackground}>
+    <View style={[styles.root, { backgroundColor: theme.background }]}>
+      {/* Fondo de color dinámico */}
+      <View style={[styles.colorBackground, { backgroundColor: theme.background }]}>
         <Header onAvatarPress={() => setMenuVisible(v => !v)} />
 
         <ProfileFloatingMenu
           visible={menuVisible}
           onViewProfile={() => { setPanelVisible(true); setMenuVisible(false); }}
-          onToggleDark={() => { /* utilizar useTheme().toggleTheme si quieres */ }}
-          onSignOut={() => { /* logout desde AuthContext */ }}
+          onToggleDark={toggleTheme}
+          onSignOut={handleSignOut}
         />
 
         <ProfilePanel visible={panelVisible} onClose={() => setPanelVisible(false)} />
@@ -44,12 +54,12 @@ export default function DashboardScreen() {
             />
           </View>
 
-          <Text style={styles.sectionTitle}>Tu Impacto Verde</Text>
+          <Text style={[styles.sectionTitle, { color: theme.card }]}>Tu Impacto Verde</Text>
 
           {isLoading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={lightTheme.primary} />
-              <Text style={styles.loadingText}>Cargando estadísticas...</Text>
+              <ActivityIndicator size="large" color={theme.primary} />
+              <Text style={[styles.loadingText, { color: theme.card }]}>Cargando estadísticas...</Text>
             </View>
           ) : stats ? (
             <>
@@ -61,7 +71,7 @@ export default function DashboardScreen() {
                     value={stats.totalTrips}
                     subtitle="Total histórico"
                     icon="bicycle"
-                    color={lightTheme.primary}
+                    color={theme.primary}
                     trend="up"
                     trendValue={`+${stats.weeklyTrips} esta semana`}
                   />
@@ -102,23 +112,12 @@ export default function DashboardScreen() {
               </View>
             </>
           ) : (
-            <View style={styles.errorContainer}>
+            <View style={[styles.errorContainer, { backgroundColor: theme.card }]}>
               <Text style={styles.errorText}>Error al cargar estadísticas</Text>
             </View>
           )}
         </View>
       </View>
-      {/* Opción con imagen de fondo - Descomenta las líneas de abajo y comenta la View para usar imagen */}
-      {/* 
-      <ImageBackground 
-        source={require('../../assets/images/fondo3.png')}
-        style={styles.backgroundImage}
-        resizeMode="cover"
-      >
-        <Header onAvatarPress={() => setMenuVisible(v => !v)} />
-        // ... resto del contenido (copia todo lo que está dentro de la View)
-      </ImageBackground> 
-      */}
     </View>
   );
 }
