@@ -53,7 +53,7 @@ const mockUsers = [
     name: 'Fabrizzio Medina',
     location: 'Puerta Principal', 
     time: '7:30 am',
-    avatar: require('../../assets/images/avatarbot.png')
+    avatar: require('../../assets/images/user1.png')
   },
   // ... más usuarios
 ];

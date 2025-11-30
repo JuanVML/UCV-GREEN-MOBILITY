@@ -7,7 +7,7 @@ const mockLoans: MovilShareUser[] = [
     id: '1',
     ownerId: 'user1',
     ownerName: 'Fabrizzio Medina',
-    avatar: require('../../assets/images/chat.png'), //imagenes de cada usuario asi se repite en cada linea de codigo
+    avatar: require('../../assets/images/user1.png'), //imagenes de cada usuario asi se repite en cada linea de codigo
     vehicleType: 'bicycle',
     vehicleDescription: 'Bicicleta MTB roja en buen estado',
     campusGate: 'Puerta Principal',
@@ -22,7 +22,7 @@ const mockLoans: MovilShareUser[] = [
     id: '2',
     ownerId: 'user2',
     ownerName: 'Alberth Lopez',
-    avatar: require('../../assets/images/icon.jpg'),
+    avatar: require('../../assets/images/user2.png'),
     vehicleType: 'scooter',
     vehicleDescription: 'Scooter eléctrico negro Xiaomi',
     campusGate: 'Puerta 2',
@@ -35,8 +35,8 @@ const mockLoans: MovilShareUser[] = [
   {
     id: '3',
     ownerId: 'user3',
-    ownerName: 'Juan Muños',
-    avatar: require('../../assets/images/logo moto.png'),
+    ownerName: 'Juan Muñoz',
+    avatar: require('../../assets/images/user3.png'),
     vehicleType: 'bicycle',
     vehicleDescription: 'Bicicleta de paseo azul',
     campusGate: 'Puerta Principal',
